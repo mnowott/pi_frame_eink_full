@@ -271,7 +271,8 @@ def ensure_wifi_connection(cfg: dict) -> int:
             "password",
             password,
         ]
-        debug(f"Running: {' '.join(connect_cmd)}")
+        safe_cmd = connect_cmd[:-1] + ["***"]
+        debug(f"Running: {' '.join(safe_cmd)}")
         connect_result = subprocess.run(
             connect_cmd,
             text=True,
