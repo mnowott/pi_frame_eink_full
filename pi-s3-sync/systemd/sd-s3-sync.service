@@ -4,7 +4,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-EnvironmentFile=/etc/epaper-frame/s3-sync.env
+EnvironmentFile=/etc/epaper-settings/s3-sync.env
 Type=oneshot
 User=pi
 Group=pi

@@ -11,7 +11,7 @@ import os
 
 # ---------- S3 config ----------
 S3_BUCKET = os.getenv("S3_BUCKET")       # <-- change to your bucket
-REGION = os.getenv("REGION")      # <-- change if needed
+REGION = os.getenv("AWS_DEFAULT_REGION") or os.getenv("REGION")
 
 s3 = boto3.client("s3", region_name=REGION)
 

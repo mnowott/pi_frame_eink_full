@@ -66,24 +66,24 @@ sudo cp scripts/sync_s3_from_sd.py /usr/local/bin/sync_s3_from_sd.py
 sudo chmod +x /usr/local/bin/sync_s3_from_sd.py
 
 echo "### 5. Create environment file for S3 sync service"
-sudo mkdir -p /etc/epaper-frame
-if [ ! -f /etc/epaper-frame/s3-sync.env ]; then
+sudo mkdir -p /etc/epaper-settings
+if [ ! -f /etc/epaper-settings/s3-sync.env ]; then
   # Populate from current environment or prompt user to edit
-  sudo tee /etc/epaper-frame/s3-sync.env >/dev/null <<ENVEOF
+  sudo tee /etc/epaper-settings/s3-sync.env >/dev/null <<ENVEOF
 AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-CHANGE_ME}
 AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-CHANGE_ME}
 AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-${REGION:-eu-central-1}}
 S3_BUCKET=${S3_BUCKET:-CHANGE_ME}
 ENVEOF
-  sudo chmod 600 /etc/epaper-frame/s3-sync.env
-  sudo chown root:root /etc/epaper-frame/s3-sync.env
-  echo "Created /etc/epaper-frame/s3-sync.env (chmod 600)"
-  if grep -q 'CHANGE_ME' /etc/epaper-frame/s3-sync.env; then
-    echo "WARNING: /etc/epaper-frame/s3-sync.env contains placeholder values."
-    echo "         Edit it with: sudo nano /etc/epaper-frame/s3-sync.env"
+  sudo chmod 600 /etc/epaper-settings/s3-sync.env
+  sudo chown root:root /etc/epaper-settings/s3-sync.env
+  echo "Created /etc/epaper-settings/s3-sync.env (chmod 600)"
+  if grep -q 'CHANGE_ME' /etc/epaper-settings/s3-sync.env; then
+    echo "WARNING: /etc/epaper-settings/s3-sync.env contains placeholder values."
+    echo "         Edit it with: sudo nano /etc/epaper-settings/s3-sync.env"
   fi
 else
-  echo "/etc/epaper-frame/s3-sync.env already exists, not overwriting."
+  echo "/etc/epaper-settings/s3-sync.env already exists, not overwriting."
 fi
 
 echo "### 6. Install systemd service + timer"
