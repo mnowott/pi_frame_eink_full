@@ -52,7 +52,7 @@ echo "Setting up python script epaper service..."
 SERVICE_NAME="epaper.service"
 SERVICE_PATH="/etc/systemd/system/${SERVICE_NAME}"
 
-# Use the repo directory where setup.sh lives as WorkingDirectory
+# Use the repo directory where setup.sh lives for ExecStart paths
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 sudo tee "$SERVICE_PATH" > /dev/null <<EOF
@@ -63,7 +63,9 @@ Wants=mnt-epaper_sd.mount
 
 [Service]
 ExecStart=${VENV_DIR}/bin/python ${REPO_DIR}/sd_monitor.py
-WorkingDirectory=${REPO_DIR}
+# WorkingDirectory must be writable — lgpio creates a notification pipe (.lgd-nfy*)
+# in the cwd. Using the repo dir fails when ProtectHome=read-only.
+WorkingDirectory=/tmp
 Restart=always
 User=${CURRENT_USER}
 
@@ -80,10 +82,12 @@ LockPersonality=true
 RestrictRealtime=true
 RestrictSUIDSGID=true
 
-# ePaper hardware access (SPI, GPIO)
+# ePaper hardware access (SPI, GPIO, gpiochip for modern kernels)
 DeviceAllow=/dev/spidev0.0 rw
 DeviceAllow=/dev/spidev0.1 rw
 DeviceAllow=/dev/gpiomem rw
+DeviceAllow=/dev/gpiochip0 rw
+DeviceAllow=/dev/gpiochip4 rw
 SupplementaryGroups=spi i2c gpio
 
 # SD card read/write

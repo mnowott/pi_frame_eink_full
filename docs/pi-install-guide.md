@@ -9,6 +9,14 @@ On your **laptop/desktop**:
 - SSH client (`ssh`, `scp`)
 - Wi-Fi credentials for the Pi's network
 
+> **What OS are you running?**
+>
+> | OS | Notes |
+> |----|-------|
+> | **macOS / native Linux** | `.local` mDNS works out of the box — you can use hostnames like `pi-rostock.local` |
+> | **WSL2 (Ubuntu on Windows)** | `.local` mDNS resolution does **not** work for SSH/scp. Use the Pi's **IP address** instead (find it on your router's admin page or via `ping <hostname>.local` — ping may resolve even when SSH can't). |
+> | **Windows (PowerShell/CMD)** | `.local` mDNS usually works if Bonjour is installed (comes with iTunes). Otherwise use the IP address. |
+
 On the **Raspberry Pi**:
 - Raspberry Pi OS Lite flashed to the internal SD card
 - SSH enabled (add empty `ssh` file to boot partition, or enable via `raspi-config`)
@@ -39,6 +47,8 @@ ssh pi@<pi-ip-address>
 # Default password: raspberry (change it!)
 ```
 
+> **WSL2 users:** Use the IP address, not `<hostname>.local`. See [Prerequisites](#prerequisites).
+
 ## 3. Set Hostname
 
 ```bash
@@ -48,12 +58,20 @@ sudo hostnamectl set-hostname <your-device-name>
 
 ## 4. Copy the Repo (from laptop)
 
-Use `scp` to copy the project — do NOT use `git clone` (avoids needing git/credentials on the Pi):
+Do NOT use `git clone` (avoids needing git/credentials on the Pi). Use `rsync` to copy — it's resumable, incremental, and skips unnecessary files:
 
 ```bash
-# From your laptop:
+# From your laptop (recommended):
+rsync -avz --exclude '.git' --exclude '__pycache__' --exclude '.mypy_cache' \
+  pi_project/ pi@<pi-ip>:~/pi_project/
+```
+
+If `rsync` isn't available, `scp` works too (but re-copies everything on retries):
+```bash
 scp -r pi_project/ pi@<pi-ip>:~/pi_project/
 ```
+
+> **WSL2 users:** Use the IP address, not `<hostname>.local`. See [Prerequisites](#prerequisites).
 
 Then on the Pi:
 ```bash

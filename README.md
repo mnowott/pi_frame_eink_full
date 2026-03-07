@@ -55,7 +55,35 @@ S3 Bucket  ──── every 15 min ────►  /mnt/epaper_sd/s3_folder/
 | **Pi** | Zero W, Zero 2W, Pi 3, or Pi 4 |
 | **Display** | Waveshare 7.3" 7-color ePaper (800x480) — `epd7in3f` primary, also supports `epd7in3e`, `epd5in65f` |
 | **SD card reader** | USB card reader with FAT32-formatted SD card |
-| **Cloud** | AWS S3 bucket for image storage |
+| **Cloud** | AWS S3 bucket (see below) |
+
+## AWS Setup
+
+You need an S3 bucket and an IAM user with access to it.
+
+1. **Create an S3 bucket** (e.g. `my-epaper-photos`) in your preferred region
+2. **Create an IAM user** with programmatic access (access key + secret key)
+3. **Attach a policy** granting the user S3 access to your bucket:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"],
+      "Resource": [
+        "arn:aws:s3:::my-epaper-photos",
+        "arn:aws:s3:::my-epaper-photos/*"
+      ]
+    }
+  ]
+}
+```
+
+4. **Store the credentials** — you'll need them in two places:
+   - **Pi:** in `.env` (used by `install_env.sh`) or directly in `wifi.json` on the SD card
+   - **ImageUiApp:** in `s3_image_croper_ui_app/ImageUiApp/.env`
 
 ## Modules
 

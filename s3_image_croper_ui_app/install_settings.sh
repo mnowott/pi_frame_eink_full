@@ -38,10 +38,32 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Go to SettingsApp directory (must exist)
 cd "$SCRIPT_DIR/SettingsApp"
 
-# Install dependencies into Poetry-managed venv
-poetry install
+# Determine the real user (not root when run via sudo)
+CURRENT_USER=${SUDO_USER:-$(whoami)}
+CURRENT_HOME=$(eval echo "~$CURRENT_USER")
 
-echo "SettingsApp dependencies installed via Poetry."
+# Regenerate lock file if pyproject.toml changed (e.g. different Python version on Pi)
+echo "Regenerating poetry.lock (in case pyproject.toml drifted)..."
+poetry lock
+
+# Install dependencies as the real user (not root) so the venv
+# lands in ~pi/.cache/pypoetry/virtualenvs, not /root/.cache.
+# Retry up to 5 times — Pi Zero Wi-Fi often times out on large downloads.
+echo "Installing SettingsApp (retrying on network timeouts)..."
+for attempt in 1 2 3 4 5; do
+  echo "  Attempt $attempt..."
+  if sudo -u "$CURRENT_USER" \
+    POETRY_HTTP_TIMEOUT=600 \
+    poetry install --no-interaction 2>&1; then
+    echo "SettingsApp dependencies installed via Poetry."
+    break
+  fi
+  if [ "$attempt" -eq 5 ]; then
+    echo "ERROR: Poetry install failed after 5 attempts."
+    exit 1
+  fi
+  sleep 5
+done
 
 echo
 echo "========================================"
@@ -50,8 +72,6 @@ echo "========================================"
 
 SERVICE_NAME="settingsapp.service"
 SERVICE_PATH="/etc/systemd/system/${SERVICE_NAME}"
-CURRENT_USER=${SUDO_USER:-$(whoami)}
-CURRENT_HOME=$(eval echo "~$CURRENT_USER")
 
 sudo tee "$SERVICE_PATH" > /dev/null <<EOF
 [Unit]
@@ -86,9 +106,10 @@ RestrictRealtime=true
 RestrictSUIDSGID=true
 PrivateDevices=true
 
-# SD card and settings config read/write
+# SD card, settings config, and Poetry cache read/write
 ReadWritePaths=/mnt/epaper_sd
 ReadWritePaths=$CURRENT_HOME/.config/epaper_settings
+ReadWritePaths=$CURRENT_HOME/.cache
 
 [Install]
 WantedBy=multi-user.target

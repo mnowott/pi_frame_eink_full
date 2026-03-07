@@ -27,7 +27,8 @@ After=network.target mnt-epaper_sd.mount
 [Service]
 User=<install-user>
 ExecStart=<venv>/bin/python sd_monitor.py
-WorkingDirectory=<repo>/eInkFrameWithStreamlitMananger
+# WorkingDirectory must be writable — lgpio creates a notification pipe (.lgd-nfy*)
+WorkingDirectory=/tmp
 Restart=always
 
 # Sandboxing
@@ -45,6 +46,8 @@ RestrictSUIDSGID=true
 DeviceAllow=/dev/spidev0.0 rw
 DeviceAllow=/dev/spidev0.1 rw
 DeviceAllow=/dev/gpiomem rw
+DeviceAllow=/dev/gpiochip0 rw
+DeviceAllow=/dev/gpiochip4 rw
 SupplementaryGroups=spi i2c gpio
 ReadWritePaths=/mnt/epaper_sd
 

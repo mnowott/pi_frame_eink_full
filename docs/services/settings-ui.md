@@ -43,9 +43,12 @@ RestrictSUIDSGID=true
 PrivateDevices=true
 ReadWritePaths=/mnt/epaper_sd
 ReadWritePaths=~/.config/epaper_settings
+ReadWritePaths=~/.cache
 ```
 
 Uses `CAP_NET_BIND_SERVICE` to bind port 80 without root.
+
+> **Note:** `ReadWritePaths=~/.cache` is required because Poetry creates its virtualenv in `~/.cache/pypoetry/virtualenvs/`, and `ProtectHome=read-only` would block it. The install script runs `poetry install` as the real user (not root) to ensure the venv is in the correct home directory.
 
 ## Behavior
 
