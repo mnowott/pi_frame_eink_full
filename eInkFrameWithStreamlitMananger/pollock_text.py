@@ -26,7 +26,7 @@ SD_MOUNT_PATH = Path("/mnt/epaper_sd")
 SD_CONFIG_DIR = SD_MOUNT_PATH / "epaper_settings"
 SD_SETTINGS_PATH = SD_CONFIG_DIR / "settings.json"
 
-HOME_CONFIG_DIR = Path.home() / ".config" / "epaper_frame"
+HOME_CONFIG_DIR = Path.home() / ".config" / "epaper_settings"
 HOME_SETTINGS_PATH = HOME_CONFIG_DIR / "settings.json"
 
 
@@ -55,7 +55,7 @@ def has_internet(timeout: float = 3.0) -> bool:
 def load_settings() -> dict:
     """
     Prefer settings on the SD card (persistent). Fall back to the legacy
-    ~/.config/epaper_frame/settings.json if needed.
+    ~/.config/epaper_settings/settings.json if needed.
     """
     settings = DEFAULT_SETTINGS.copy()
 

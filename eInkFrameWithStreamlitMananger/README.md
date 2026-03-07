@@ -99,8 +99,8 @@ Key files and folders:
 
 Settings are loaded from the first existing file in:
 
-1. `/etc/epaper_frame/settings.json`
-2. `~/.config/epaper_frame/settings.json`
+1. `/etc/epaper_settings/settings.json`
+2. `~/.config/epaper_settings/settings.json`
 3. `<repo>/settings.json`
 
 Both **`sd_monitor.py`** and **`frame_manager.py`** share the same defaults:
@@ -437,7 +437,7 @@ User=<current user>
 WantedBy=multi-user.target
 ```
 
-3. Creates a default `~/.config/epaper_frame/settings.json` if missing.
+3. Creates a default `~/.config/epaper_settings/settings.json` if missing.
 4. Enables the service (`systemctl enable epaper.service`).
 5. Prompts for reboot.
 

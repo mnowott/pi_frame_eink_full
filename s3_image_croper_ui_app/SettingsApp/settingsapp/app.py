@@ -18,7 +18,7 @@ SD_CONFIG_DIR = SD_MOUNT_PATH / "epaper_settings"
 SD_SETTINGS_PATH = SD_CONFIG_DIR / "settings.json"
 
 # Legacy / backup location in the user's home dir
-HOME_CONFIG_DIR = Path.home() / ".config" / "epaper_frame"
+HOME_CONFIG_DIR = Path.home() / ".config" / "epaper_settings"
 HOME_SETTINGS_PATH = HOME_CONFIG_DIR / "settings.json"
 
 # Default settings
@@ -62,7 +62,7 @@ def load_settings() -> dict:
 
     Fallback order:
       1) /mnt/epaper_sd/epaper_settings/settings.json   (persistent)
-      2) ~/.config/epaper_frame/settings.json           (legacy / backup)
+      2) ~/.config/epaper_settings/settings.json           (legacy / backup)
     """
     settings = DEFAULT_SETTINGS.copy()
     primary = get_primary_settings_path()
@@ -102,9 +102,9 @@ def save_settings(settings: dict):
 
     - If SD is mounted:
         - Write to /mnt/epaper_sd/epaper_settings/settings.json
-        - Also write a backup to ~/.config/epaper_frame/settings.json
+        - Also write a backup to ~/.config/epaper_settings/settings.json
     - If SD is NOT mounted:
-        - Only write to ~/.config/epaper_frame/settings.json
+        - Only write to ~/.config/epaper_settings/settings.json
           (on overlayfs this may not survive a reboot)
     """
     # 1) SD card: primary, persistent storage

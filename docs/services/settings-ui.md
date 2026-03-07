@@ -33,7 +33,7 @@ Uses `CAP_NET_BIND_SERVICE` to bind port 80 without root.
 
 ## Behavior
 
-- **Load settings:** Reads from SD card `/mnt/epaper_sd/epaper_settings/settings.json` (primary), falls back to `~/.config/epaper_frame/settings.json`
+- **Load settings:** Reads from SD card `/mnt/epaper_sd/epaper_settings/settings.json` (primary), falls back to `~/.config/epaper_settings/settings.json`
 - **Save settings:** Writes to both SD and home config. Also writes `/mnt/epaper_sd/refresh_time.txt` for backward compatibility.
 - **SD detection:** Uses `os.path.ismount("/mnt/epaper_sd")` to check if SD is available. Shows warning if not mounted.
 

@@ -50,8 +50,8 @@ systemd
 
 Reads `settings.json` from (priority order):
 1. `/mnt/epaper_sd/epaper_settings/settings.json`
-2. `/etc/epaper_frame/settings.json`
-3. `~/.config/epaper_frame/settings.json`
+2. `/etc/epaper_settings/settings.json`
+3. `~/.config/epaper_settings/settings.json`
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|

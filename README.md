@@ -58,7 +58,7 @@ This repository contains all the pieces to do that.
                   │    settingsapp.service →      │
                   │    SettingsApp                │
                   │      - writes /mnt/epaper_sd      │
-                  │        epaper_frame/settings.json
+                  │        epaper_settings/settings.json
                   │      - writes /mnt/epaper_sd/ │
                   │        refresh_time.txt       │
                   └───────────────────────────────┘
@@ -128,8 +128,8 @@ This is the part that actually drives the Waveshare ePaper display.
 
   * Reads settings from one of:
 
-    * `/etc/epaper_frame/settings.json`
-    * `/mnt/epaper_sd/epaper_frame/settings.json`
+    * `/etc/epaper_settings/settings.json`
+    * `/mnt/epaper_sd/epaper_settings/settings.json`
     * `eInkFrameWithStreamlitMananger/settings.json`
   * Uses defaults if not found.
 
@@ -291,7 +291,7 @@ You normally don’t touch these unless you switch to a different Waveshare pane
   WantedBy=multi-user.target
   ```
 
-* Ensures `/mnt/epaper_sd/epaper_frame/settings.json` exists with sane defaults.
+* Ensures `/mnt/epaper_sd/epaper_settings/settings.json` exists with sane defaults.
 
 * Reloads systemd and enables `epaper.service`.
 
@@ -535,7 +535,7 @@ Streamlit app that configures the ePaper behaviour **without SSHing into the Pi*
 * Settings live at:
 
   ```text
-  /mnt/epaper_sd/epaper_frame/settings.json
+  /mnt/epaper_sd/epaper_settings/settings.json
   ```
 
   Same format used by `sd_monitor.py` and `frame_manager.py`.
@@ -563,7 +563,7 @@ Streamlit app that configures the ePaper behaviour **without SSHing into the Pi*
 
 On submit:
 
-1. Writes updated `settings.json` to `/mnt/epaper_sd/epaper_frame/`.
+1. Writes updated `settings.json` to `/mnt/epaper_sd/epaper_settings/`.
 2. Computes `interval_seconds = change_interval_minutes * 60`.
 3. If SD is mounted:
 
@@ -605,12 +605,12 @@ http://<pi-ip>/
 This script creates a “status card” image (Pollock-style background with clean text overlay) summarising:
 
 * Whether the Pi has internet connectivity.
-* Current `epaper_frame` settings.
+* Current `epaper_settings` settings.
 * Hostname and how to access the settings UI.
 
 ### 5.1 How it works
 
-* Reads `/mnt/epaper_sd/epaper_frame/settings.json` (same as the other components).
+* Reads `/mnt/epaper_sd/epaper_settings/settings.json` (same as the other components).
 
 * Checks internet via a simple socket call to `8.8.8.8:53`.
 
@@ -741,7 +741,7 @@ Putting it all together:
      * Configure quiet hours.
    * On save:
 
-     * `/mnt/epaper_sd/epaper_frame/settings.json` is updated.
+     * `/mnt/epaper_sd/epaper_settings/settings.json` is updated.
      * `refresh_time.txt` on the SD card is written if available.
    * The next (re)run of `sd_monitor.py` / `frame_manager.py` picks these up.
 

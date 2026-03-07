@@ -47,7 +47,7 @@ Last updated: 2026-03-07
 ```
 SettingsApp (browser on http://<pi-ip>/)
   │
-  ├── Reads settings.json from SD (primary) or ~/.config/epaper_frame/ (fallback)
+  ├── Reads settings.json from SD (primary) or ~/.config/epaper_settings/ (fallback)
   ├── User edits: picture_mode, change_interval_minutes, quiet hours, s3_folder
   ├── Saves settings.json back to SD + home
   └── Writes refresh_time.txt to SD (backward compat)
@@ -63,8 +63,8 @@ sd_monitor.py detects mtime change on next 30s poll
 All display-stack modules use the same priority chain:
 
 1. `/mnt/epaper_sd/epaper_settings/settings.json` (SD card — preferred)
-2. `/etc/epaper_frame/settings.json`
-3. `~/.config/epaper_frame/settings.json`
+2. `/etc/epaper_settings/settings.json`
+3. `~/.config/epaper_settings/settings.json`
 4. Local `settings.json` in script directory
 
 ## Credential Flow

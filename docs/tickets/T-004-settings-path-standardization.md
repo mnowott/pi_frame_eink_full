@@ -1,6 +1,6 @@
 # T-004: Standardize settings directory name across modules
 
-Status: Open
+Status: Closed
 Last updated: 2026-03-07
 
 ## Problem

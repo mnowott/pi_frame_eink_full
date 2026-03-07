@@ -69,7 +69,7 @@ All Python modules use **Poetry** for dependency management.
 
 ## Settings (settings.json)
 
-Loaded from (priority order): SD card `/mnt/epaper_sd/epaper_settings/settings.json` → `~/.config/epaper_frame/settings.json`
+Loaded from (priority order): SD card `/mnt/epaper_sd/epaper_settings/settings.json` → `~/.config/epaper_settings/settings.json`
 
 ```json
 {
@@ -120,7 +120,7 @@ Tracked in detail in [docs/tickets/](docs/tickets/index.md) and [docs/bugs/](doc
 | T-001 | Hardcoded AWS credentials in install scripts, .env files, systemd units | Critical |
 | T-002 | No root .gitignore; .env and .pem files tracked in git | Critical |
 | T-003 | Missing unit tests and Makefiles for most modules | Medium |
-| T-004 | Settings path inconsistency (`epaper_settings/` vs `epaper_frame/`) | Medium |
+| T-004 | Settings path inconsistency (`epaper_settings/` vs `epaper_settings/`) | Medium |
 | T-005 | Inconsistent AWS env var names (`AWS_KEY_ID` vs `AWS_ACCESS_KEY_ID`) | Low |
 | T-006 | Duplicated `load_settings()` across 3 files | Low |
 | T-007 | Empty/incomplete module READMEs | Low |

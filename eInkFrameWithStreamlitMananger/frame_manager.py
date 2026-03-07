@@ -32,8 +32,8 @@ DEFAULT_SETTINGS = {
 
 SETTINGS_LOCATIONS = [
     "/mnt/epaper_sd/epaper_settings/settings.json",  # NEW: SD card primary config
-    "/etc/epaper_frame/settings.json",
-    os.path.expanduser("~/.config/epaper_frame/settings.json"),
+    "/etc/epaper_settings/settings.json",
+    os.path.expanduser("~/.config/epaper_settings/settings.json"),
     os.path.join(SCRIPT_DIR, "settings.json"),
 ]
 

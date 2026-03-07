@@ -52,7 +52,7 @@ PrivateDevices=true
 **settingsapp.service** — needs SD access and port 80:
 ```ini
 ReadWritePaths=/mnt/epaper_sd
-ReadWritePaths=~/.config/epaper_frame
+ReadWritePaths=~/.config/epaper_settings
 PrivateDevices=true
 CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_BIND_SERVICE

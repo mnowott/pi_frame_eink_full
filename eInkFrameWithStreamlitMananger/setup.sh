@@ -72,7 +72,7 @@ WantedBy=multi-user.target
 EOF
 
 echo "Creating default settings.json (if not present)..."
-CONFIG_DIR="${CURRENT_HOME}/.config/epaper_frame"
+CONFIG_DIR="${CURRENT_HOME}/.config/epaper_settings"
 CONFIG_PATH="${CONFIG_DIR}/settings.json"
 
 sudo -u "$CURRENT_USER" mkdir -p "$CONFIG_DIR"
