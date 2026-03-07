@@ -83,7 +83,7 @@ Loaded from (priority order): SD card `/mnt/epaper_sd/epaper_settings/settings.j
 ## Workflow Rules
 
 After every code change:
-1. **Run `make check`** at the repo root — this runs format, lint, and test across all modules. All checks must pass. (Requires T-003 to be completed first; until then, run `poetry run pytest -q --tb=short` in each affected module.)
+1. **Run `make check`** at the repo root — this runs lint, typecheck (mypy), format-check (ruff), and test (pytest) across all four modules. All checks must pass. Use `make format` to auto-fix formatting.
 2. **Review documentation for accuracy** — check that `docs/`, `CLAUDE.md`, and module READMEs still reflect the current state. Update any affected docs (architecture, services, settings, data flow). Update `Last updated` dates on changed docs.
 3. **Update tickets/bugs** — if your change resolves a ticket or bug, update its status to Closed. If it introduces new issues, create new entries.
 
@@ -103,7 +103,8 @@ docs/
 ├── conventions.md        # Status values, ID schemes, formatting rules
 ├── architecture/         # System overview, data flow, deployment topology
 ├── services/             # Per-service docs (systemd units, config, debugging)
-├── tickets/              # Planned improvements (T-001 through T-009)
+├── pi-install-guide.md   # Step-by-step fresh Pi setup runbook
+├── tickets/              # Planned improvements (T-001 through T-010)
 └── bugs/                 # Known bugs (B-001 through B-006)
 ```
 
@@ -113,19 +114,14 @@ When modifying code, check `docs/tickets/` and `docs/bugs/` for related items. U
 
 ## Known Issues / Tech Debt
 
-Tracked in detail in [docs/tickets/](docs/tickets/index.md) and [docs/bugs/](docs/bugs/index.md). Summary:
+Tracked in detail in [docs/tickets/](docs/tickets/index.md) and [docs/bugs/](docs/bugs/index.md).
 
-| ID | Issue | Severity |
-|----|-------|----------|
-| T-001 | Hardcoded AWS credentials in install scripts, .env files, systemd units | Critical |
-| T-002 | No root .gitignore; .env and .pem files tracked in git | Critical |
-| T-003 | Missing unit tests and Makefiles for most modules | Medium |
-| T-004 | Settings path inconsistency (`epaper_settings/` vs `epaper_settings/`) | Medium |
-| T-005 | Inconsistent AWS env var names (`AWS_KEY_ID` vs `AWS_ACCESS_KEY_ID`) | Low |
-| T-006 | Duplicated `load_settings()` across 3 files | Low |
-| T-007 | Empty/incomplete module READMEs | Low |
-| B-003 | Wi-Fi password logged in plaintext | High |
-| B-004 | Potential command injection in Wi-Fi connection | High |
-| B-006 | SettingsApp s3_folder input commented out, hardcoded default | Medium |
-| T-008 | Systemd services lack sandboxing (ProtectSystem, PrivateTmp, etc.) | High |
-| T-009 | No firewall, SSH unhardened, sysctl defaults, swap/BT not disabled | High |
+All original tickets (T-001 through T-009) and bugs (B-001 through B-006) have been **resolved and closed**.
+
+Remaining items:
+
+| ID | Issue | Status |
+|----|-------|--------|
+| T-010 | Fresh Pi install guide (step-by-step runbook) | Closed |
+| — | SSH `PasswordAuthentication no` must be set manually after key auth confirmed | Manual step |
+| — | SettingsApp has no authentication (mitigated by LAN-only firewall rule) | Accepted risk |

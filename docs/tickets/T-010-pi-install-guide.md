@@ -1,6 +1,6 @@
 # T-010: Fresh Pi install guide
 
-Status: Open
+Status: Closed
 Last updated: 2026-03-07
 
 ## Problem

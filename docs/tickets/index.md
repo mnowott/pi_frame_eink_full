@@ -15,4 +15,4 @@ Last updated: 2026-03-07
 | [T-007](T-007-missing-module-readmes.md) | Complete missing README documentation | Closed | 2026-03-07 |
 | [T-008](T-008-systemd-sandboxing.md) | Add systemd sandboxing to all services | Closed | 2026-03-07 |
 | [T-009](T-009-os-network-hardening.md) | OS and network hardening (firewall, SSH, sysctl, peripherals) | Closed | 2026-03-07 |
-| [T-010](T-010-pi-install-guide.md) | Fresh Pi install guide (step-by-step runbook) | Open | 2026-03-07 |
+| [T-010](T-010-pi-install-guide.md) | Fresh Pi install guide (step-by-step runbook) | Closed | 2026-03-07 |

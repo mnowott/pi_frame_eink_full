@@ -7,6 +7,8 @@ Last updated: 2026-03-07
 | Section | Description |
 |---------|-------------|
 | [conventions.md](conventions.md) | Status values, ID schemes, formatting rules |
+| [pi-install-guide.md](pi-install-guide.md) | Step-by-step fresh Pi setup runbook |
+| [pi-monitoring-guide.md](pi-monitoring-guide.md) | Post-install monitoring and health checks |
 | [architecture/](architecture/index.md) | System architecture, data flow, deployment topology |
 | [services/](services/index.md) | Per-service documentation (systemd units, install, config) |
 | [tickets/](tickets/index.md) | Planned improvements and feature work |
@@ -14,5 +16,5 @@ Last updated: 2026-03-07
 
 ## Quick Stats
 
-- **Tickets:** 9 Open
-- **Bugs:** 6 Open
+- **Tickets:** 10 total, all Closed
+- **Bugs:** 6 total, all Closed
