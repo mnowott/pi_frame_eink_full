@@ -6,9 +6,9 @@ Here’s a compact “runbook” you can keep for later. I’ll write it as a Ma
 
 ## 1. Architecture Overview
 
-* **Domain:** `yourdomain.example`
-* **Public app URL:** `https://app.yourdomain.example`
-* **DNS:** Route 53 hosted zone for `yourdomain.example`
+* **Domain:** `example.com`
+* **Public app URL:** `https://app.example.com`
+* **DNS:** Route 53 hosted zone for `example.com`
 
   * `A` record (Alias) → ALB DNS
 * **Load Balancer:** Application Load Balancer (ALB), internet-facing, in `eu-central-1`
@@ -27,25 +27,25 @@ Here’s a compact “runbook” you can keep for later. I’ll write it as a Ma
 
 ### 2.1 Route 53
 
-Hosted zone: `yourdomain.example`
+Hosted zone: `example.com`
 
 Record for the app:
 
-* **Name:** `app.yourdomain.example`
+* **Name:** `app.example.com`
 * **Type:** `A`
 * **Alias:** Yes
 * **Target:** `dualstack.<your-alb-name>.<region>.elb.amazonaws.com.` (ALB DNS name)
 
-Make sure your domain registrar uses the Route 53 name servers for `yourdomain.example`.
+Make sure your domain registrar uses the Route 53 name servers for `example.com`.
 
 ### 2.2 ACM Certificate
 
 * Request a certificate in **the same region as the ALB** (`eu-central-1`).
-* Domain: `*.yourdomain.example`
+* Domain: `*.example.com`
 * Validate (DNS validation recommended).
 * Attach this cert to the ALB HTTPS listener:
 
-  * Listener 443 → **Standard-SSL/TLS-Serverzertifikat**: `*.yourdomain.example`
+  * Listener 443 → **Standard-SSL/TLS-Serverzertifikat**: `*.example.com`
 
 ---
 
@@ -229,7 +229,7 @@ Listener 80:
   * Query: `#{query}`
   * Status code: `301`
 
-This forces all `http://app.yourdomain.example` → `https://app.yourdomain.example`.
+This forces all `http://app.example.com` → `https://app.example.com`.
 
 ### 5.3 HTTPS Listener (Port 443) – OIDC + Forward
 
@@ -237,7 +237,7 @@ Listener 443:
 
 * **Protocol:** HTTPS
 * **Port:** 443
-* **SSL certificate:** `*.yourdomain.example` (ACM)
+* **SSL certificate:** `*.example.com` (ACM)
 * **Vorab-Weiterleitungsaktion (Pre-auth action):**
 
   * `Benutzer authentifizieren` (Authenticate user)
@@ -266,19 +266,19 @@ You get (example with your values):
 * **Issuer:**
 
   ```text
-  https://login.microsoftonline.com/8754bff6-c883-4816-ac3d-dad1031e1851/v2.0
+  https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0
   ```
 
 * **Authorization endpoint:**
 
   ```text
-  https://login.microsoftonline.com/8754bff6-c883-4816-ac3d-dad1031e1851/oauth2/v2.0/authorize
+  https://login.microsoftonline.com/YOUR_TENANT_ID/oauth2/v2.0/authorize
   ```
 
 * **Token endpoint:**
 
   ```text
-  https://login.microsoftonline.com/8754bff6-c883-4816-ac3d-dad1031e1851/oauth2/v2.0/token
+  https://login.microsoftonline.com/YOUR_TENANT_ID/oauth2/v2.0/token
   ```
 
 * **Userinfo endpoint:**
@@ -298,7 +298,7 @@ In Azure Portal → **Entra ID → App registrations → your app**:
   * Add redirect URI:
 
     ```text
-    https://app.yourdomain.example/oauth2/idpresponse
+    https://app.example.com/oauth2/idpresponse
     ```
 
   * Enable **ID tokens** (if there’s an implicit/hybrid section)
@@ -316,7 +316,7 @@ In Entra ID → **Enterprise applications**:
   * **User assignment required?** → **Yes**
 * **Users and groups:**
 
-  * Assign only the users/groups allowed to access `app.yourdomain.example`
+  * Assign only the users/groups allowed to access `app.example.com`
 
 Result: only assigned users can obtain valid tokens → only they pass ALB auth.
 
@@ -334,19 +334,19 @@ Fill in:
 * **Aussteller (Issuer):**
 
   ```text
-  https://login.microsoftonline.com/8754bff6-c883-4816-ac3d-dad1031e1851/v2.0
+  https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0
   ```
 
 * **Autorisierungs-Endpunkt (Authorization endpoint):**
 
   ```text
-  https://login.microsoftonline.com/8754bff6-c883-4816-ac3d-dad1031e1851/oauth2/v2.0/authorize
+  https://login.microsoftonline.com/YOUR_TENANT_ID/oauth2/v2.0/authorize
   ```
 
 * **Token-Endpunkt (Token endpoint):**
 
   ```text
-  https://login.microsoftonline.com/8754bff6-c883-4816-ac3d-dad1031e1851/oauth2/v2.0/token
+  https://login.microsoftonline.com/YOUR_TENANT_ID/oauth2/v2.0/token
   ```
 
 * **Benutzer-Info-Endpunkt (User info endpoint):**
@@ -388,9 +388,9 @@ After this “Authenticate” action, add the **forward** action to `tg-streamli
 From your local machine:
 
 ```bash
-dig app.yourdomain.example
+dig app.example.com
 # or
-nslookup app.yourdomain.example
+nslookup app.example.com
 ```
 
 * Should resolve to the ALB IPs.
@@ -398,18 +398,18 @@ nslookup app.yourdomain.example
 ### 8.2 TLS & Cert
 
 ```bash
-openssl s_client -connect app.yourdomain.example:443 -servername app.yourdomain.example </dev/null 2>/dev/null | openssl x509 -noout -subject -issuer
+openssl s_client -connect app.example.com:443 -servername app.example.com </dev/null 2>/dev/null | openssl x509 -noout -subject -issuer
 ```
 
-* Subject should show `CN=*.yourdomain.example`
+* Subject should show `CN=*.example.com`
 * Issuer should be Amazon
 
 ### 8.3 HTTP Flow
 
-* Open `http://app.yourdomain.example`:
+* Open `http://app.example.com`:
 
-  * Should redirect to `https://app.yourdomain.example`
-* Open `https://app.yourdomain.example` (Incognito):
+  * Should redirect to `https://app.example.com`
+* Open `https://app.example.com` (Incognito):
 
   * Should redirect to Microsoft login (Entra)
   * After login (if assigned) → Streamlit app
