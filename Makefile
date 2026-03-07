@@ -1,4 +1,5 @@
 MODULES := eInkFrameWithStreamlitMananger \
+           pi-s3-sync \
            s3_image_croper_ui_app/ImageUiApp \
            s3_image_croper_ui_app/SettingsApp
 

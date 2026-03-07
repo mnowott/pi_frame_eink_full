@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "pi-s3-sync"
+version = "0.1.0"
+description = "Sync S3 bucket to SD card with optional Wi-Fi management"
+authors = []
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
