@@ -1,0 +1,11 @@
+[Unit]
+Description=Run sd-s3-sync.service every 15 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=15min
+Unit=sd-s3-sync.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target

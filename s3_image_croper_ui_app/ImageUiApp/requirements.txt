@@ -1,0 +1,8 @@
+streamlit
+pillow
+ipython
+numpy
+boto3
+python-dotenv
+pyhere
+mypy

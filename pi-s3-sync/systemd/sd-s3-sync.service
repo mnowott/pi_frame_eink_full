@@ -1,0 +1,14 @@
+[Unit]
+Description=Sync S3 bucket to SD card or HOME when wifi.json is present
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+EnvironmentFile=/etc/epaper-frame/s3-sync.env
+Type=oneshot
+User=pi
+Group=pi
+ExecStart=/usr/local/bin/sync_s3_from_sd.py
+
+[Install]
+WantedBy=multi-user.target
