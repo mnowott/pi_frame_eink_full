@@ -10,5 +10,22 @@ User=pi
 Group=pi
 ExecStart=/usr/local/bin/sync_s3_from_sd.py
 
+# --- Sandboxing ---
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+PrivateDevices=true
+
+# SD card read/write
+ReadWritePaths=/mnt/epaper_sd
+
 [Install]
 WantedBy=multi-user.target

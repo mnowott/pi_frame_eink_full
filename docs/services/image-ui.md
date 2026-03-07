@@ -27,6 +27,32 @@ Streamlit web app for cropping and uploading images to S3. Runs on a laptop, EC2
 | **View** | Browse S3 images, click to preview full size |
 | **Downloads** | Download `wifi.json` template for SD card; generate pre-signed ZIP URL of all S3 images (1h expiry) |
 
+## Systemd Unit (EC2)
+
+```ini
+# imageuiapp.service
+[Service]
+User=ec2-user
+WorkingDirectory=<repo>/s3_image_croper_ui_app/ImageUiApp
+ExecStart=/bin/bash -lc 'poetry run imageuiapp --port 8051'
+Restart=always
+RestartSec=5
+
+# Sandboxing
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+PrivateDevices=true
+```
+
 ## Configuration
 
 Via `.env` file at `ImageUiApp/.env` (or environment variables):

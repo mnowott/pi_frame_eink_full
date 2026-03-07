@@ -1,6 +1,6 @@
 # T-008: Add systemd sandboxing to all services
 
-Status: Open
+Status: Closed
 Last updated: 2026-03-07
 
 ## Problem

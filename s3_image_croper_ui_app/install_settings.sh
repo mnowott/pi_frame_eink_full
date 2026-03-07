@@ -66,13 +66,29 @@ WorkingDirectory=$SCRIPT_DIR/SettingsApp
 # Allow binding to port 80 without running as root
 CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_BIND_SERVICE
-NoNewPrivileges=true
 
 # Run the app via Poetry
-# We still use bash -lc so any shell init (if you ever add it) is respected
 ExecStart=/bin/bash -lc 'poetry run settingsapp --port 80 --address 0.0.0.0'
 Restart=always
 RestartSec=5
+
+# --- Sandboxing ---
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+PrivateDevices=true
+
+# SD card and settings config read/write
+ReadWritePaths=/mnt/epaper_sd
+ReadWritePaths=$CURRENT_HOME/.config/epaper_settings
 
 [Install]
 WantedBy=multi-user.target

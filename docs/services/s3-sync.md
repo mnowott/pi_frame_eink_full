@@ -33,13 +33,26 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
+EnvironmentFile=/etc/epaper-settings/s3-sync.env
 Type=oneshot
 User=pi
+Group=pi
 ExecStart=/usr/local/bin/sync_s3_from_sd.py
-Environment="AWS_KEY_ID=..."
-Environment="AWS_SECRET_ACCESS_KEY=..."
-Environment="REGION=eu-central-1"
-Environment="S3_BUCKET=your-s3-bucket-name"
+
+# Sandboxing
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+PrivateDevices=true
+ReadWritePaths=/mnt/epaper_sd
 ```
 
 ## Sync Logic

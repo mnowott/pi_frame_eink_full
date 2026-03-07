@@ -67,6 +67,28 @@ WorkingDirectory=${REPO_DIR}
 Restart=always
 User=${CURRENT_USER}
 
+# --- Sandboxing ---
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+
+# ePaper hardware access (SPI, GPIO)
+DeviceAllow=/dev/spidev0.0 rw
+DeviceAllow=/dev/spidev0.1 rw
+DeviceAllow=/dev/gpiomem rw
+SupplementaryGroups=spi i2c gpio
+
+# SD card read/write
+ReadWritePaths=/mnt/epaper_sd
+
 [Install]
 WantedBy=multi-user.target
 EOF

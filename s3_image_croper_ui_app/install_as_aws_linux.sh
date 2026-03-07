@@ -122,6 +122,20 @@ Restart=always
 RestartSec=5
 Environment=PYTHONUNBUFFERED=1
 
+# --- Sandboxing ---
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+PrivateDevices=true
+
 [Install]
 WantedBy=multi-user.target
 EOF

@@ -30,6 +30,24 @@ ExecStart=<venv>/bin/python sd_monitor.py
 WorkingDirectory=<repo>/eInkFrameWithStreamlitMananger
 Restart=always
 
+# Sandboxing
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+DeviceAllow=/dev/spidev0.0 rw
+DeviceAllow=/dev/spidev0.1 rw
+DeviceAllow=/dev/gpiomem rw
+SupplementaryGroups=spi i2c gpio
+ReadWritePaths=/mnt/epaper_sd
+
 [Install]
 WantedBy=multi-user.target
 ```

@@ -27,6 +27,22 @@ CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 Restart=always
 RestartSec=5
+
+# Sandboxing
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+PrivateDevices=true
+ReadWritePaths=/mnt/epaper_sd
+ReadWritePaths=~/.config/epaper_settings
 ```
 
 Uses `CAP_NET_BIND_SERVICE` to bind port 80 without root.
