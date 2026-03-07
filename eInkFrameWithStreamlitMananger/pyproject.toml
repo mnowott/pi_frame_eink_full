@@ -14,11 +14,18 @@ boto3 = "^1.35.0"
 moto = "^5.1.18"
 
 [tool.poetry.group.dev.dependencies]
-black = "^24.0.0"
-isort = "^5.13.0"
 mypy = "^1.10.0"
 pytest = "^8.0.0"
+pytest-cov = "^6.0"
+ruff = "^0.8"
 Pillow = "^11.0.0"
+
+[tool.mypy]
+exclude = ["lib/"]
+
+[[tool.mypy.overrides]]
+module = "lib.*"
+ignore_errors = true
 
 [build-system]
 requires = ["poetry-core>=1.9.0"]

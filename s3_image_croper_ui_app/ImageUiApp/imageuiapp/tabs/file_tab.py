@@ -12,7 +12,7 @@ import pyhere
 dotenv.load_dotenv(pyhere.here("ImageUiApp/.env"))
 
 # ---------- S3 config ----------
-S3_BUCKET = os.getenv("S3_BUCKET")       # <-- change to your bucket
+S3_BUCKET = os.getenv("S3_BUCKET")  # <-- change to your bucket
 REGION = os.getenv("AWS_DEFAULT_REGION") or os.getenv("REGION")
 
 # Create a reusable S3 client
@@ -20,6 +20,7 @@ s3 = boto3.client("s3", region_name=REGION)
 
 
 # ---------- Helper functions ----------
+
 
 def load_image_from_upload(uploaded_file):
     """Load and verify an uploaded image, return (PIL.Image, error_message_or_None)."""
@@ -75,8 +76,7 @@ def list_saved_images(prefix: str):
     keys = [
         obj["Key"]
         for obj in resp["Contents"]
-        if Path(obj["Key"]).suffix.lower() in exts
-        and not obj["Key"].endswith("/")
+        if Path(obj["Key"]).suffix.lower() in exts and not obj["Key"].endswith("/")
     ]
     keys.sort()
     return keys
@@ -142,12 +142,13 @@ def render_saved_images_section(prefix: str):
 
 # ---------- Main render function for tab 1 ----------
 
+
 def render(
     uploaded_files,
     selected_name,
     selected_file,
     step: int,
-    output_folder: str,   # S3 prefix, not Path
+    output_folder: str,  # S3 prefix, not Path
     crop_width: int,
     crop_height: int,
     resize_max_dim: int,  # max dimension for resizing

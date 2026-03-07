@@ -5,7 +5,7 @@ import random
 from PIL import Image
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-LIB_PATH = os.path.join(SCRIPT_DIR, 'lib')
+LIB_PATH = os.path.join(SCRIPT_DIR, "lib")
 
 # Make sure the Waveshare lib is importable
 if LIB_PATH not in sys.path:
@@ -17,7 +17,7 @@ from lib.waveshare_epd import epd7in3f
 try:
     import pollock_text
 except Exception as e:
-    pollock_text = None
+    pollock_text = None  # type: ignore[assignment]
     print(f"Warning: could not import pollock_text: {e}")
 
 
@@ -87,9 +87,9 @@ class DisplayManager:
             # If pollock_text is available, use a dynamic Pollock status;
             # otherwise fall back to a static message image.
             if pollock_text is not None:
-                self.display_pollock_status('no_valid_images.jpg')
+                self.display_pollock_status("no_valid_images.jpg")
             else:
-                self.display_message('no_valid_images.jpg')
+                self.display_message("no_valid_images.jpg")
             return
 
         random_image = self.select_random_image(images)
@@ -108,11 +108,13 @@ class DisplayManager:
             if elapsed_time >= self.refresh_time:
                 images = self.fetch_image_files()
                 if not images:
-                    print("No images found during rotation, showing Pollock or fallback.")
+                    print(
+                        "No images found during rotation, showing Pollock or fallback."
+                    )
                     if pollock_text is not None:
-                        self.display_pollock_status('no_valid_images.jpg')
+                        self.display_pollock_status("no_valid_images.jpg")
                     else:
-                        self.display_message('no_valid_images.jpg')
+                        self.display_message("no_valid_images.jpg")
                     return
 
                 random_image = self.select_random_image(images)
@@ -146,7 +148,7 @@ class DisplayManager:
         if pollock_text is None:
             print("pollock_text not available, cannot display Pollock status.")
             # Fall back to a default static message if you want:
-            self.display_message('no_valid_images.jpg')
+            self.display_message("no_valid_images.jpg")
             return
 
         status_img = pollock_text.generate_status_image(custom_text=text)

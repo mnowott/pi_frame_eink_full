@@ -11,7 +11,9 @@ try:
 except ImportError:
     S3Manager = None
 
-pytestmark = pytest.mark.skipif(S3Manager is None, reason="s3_manager package not installed")
+pytestmark = pytest.mark.skipif(
+    S3Manager is None, reason="s3_manager package not installed"
+)
 
 
 def test_check_connection_success(s3_manager: S3Manager) -> None:
@@ -27,7 +29,9 @@ def test_check_connection_failure(s3_client) -> None:
     assert manager.check_connection() is False
 
 
-def test_put_file_uploads_object(tmp_path: Path, s3_manager: S3Manager, s3_client) -> None:
+def test_put_file_uploads_object(
+    tmp_path: Path, s3_manager: S3Manager, s3_client
+) -> None:
     client, bucket_name = s3_client
 
     # create a local file to upload

@@ -1,17 +1,32 @@
-.PHONY: install lint test all
+SOURCES := settings_loader.py sd_monitor.py frame_manager.py \
+           image_converter.py pollock_text.py display_manager.py
+
+.PHONY: install lint typecheck format format-check doctest test coverage all check
 
 install:
 	poetry install --quiet
 
 lint:
-	poetry run python -m py_compile settings_loader.py
-	poetry run python -m py_compile sd_monitor.py
-	poetry run python -m py_compile frame_manager.py
-	poetry run python -m py_compile image_converter.py
-	poetry run python -m py_compile pollock_text.py
-	poetry run python -m py_compile display_manager.py
+	@for src in $(SOURCES); do poetry run python -m py_compile $$src || exit 1; done
+
+typecheck:
+	poetry run mypy --ignore-missing-imports --exclude 'lib/' $(SOURCES)
+
+format:
+	poetry run ruff format $(SOURCES) tests/
+
+format-check:
+	poetry run ruff format --check $(SOURCES) tests/
+
+doctest:
+	poetry run pytest --doctest-modules $(SOURCES) -q --tb=short || true
 
 test:
 	poetry run pytest -q --tb=short
 
-all: lint test
+coverage:
+	poetry run pytest --cov=. --cov-report=term-missing -q --tb=short
+
+check: lint typecheck format-check test
+
+all: check

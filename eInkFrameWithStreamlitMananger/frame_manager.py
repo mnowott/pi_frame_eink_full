@@ -53,7 +53,8 @@ def build_local_only_source(sd_path: str, s3_folder_name: str) -> str:
         dirs[:] = [
             d
             for d in dirs
-            if os.path.abspath(os.path.join(root_abs, d)) not in (s3_full, processed_full)
+            if os.path.abspath(os.path.join(root_abs, d))
+            not in (s3_full, processed_full)
         ]
 
         # If we're inside s3_folder OR processed cache anyway, skip (defensive)
@@ -79,9 +80,7 @@ def build_local_only_source(sd_path: str, s3_folder_name: str) -> str:
             try:
                 shutil.copy2(src_file, dest_file)
             except Exception as e:
-                print(
-                    f"[frame_manager] Failed to copy {src_file} -> {dest_file}: {e}"
-                )
+                print(f"[frame_manager] Failed to copy {src_file} -> {dest_file}: {e}")
 
     return FILTERED_SD_PATH
 
@@ -121,7 +120,6 @@ def get_effective_source_dir(sd_path: str, settings: dict) -> str:
 
 
 if __name__ == "__main__":
-
     # Collect arguments from the command line
     if len(sys.argv) < 3:
         print("Usage: frame_manager.py <sd_path> <refresh_time_sec>")

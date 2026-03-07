@@ -7,6 +7,7 @@ import pytest
 
 # Add parent directory so standalone modules are importable
 import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from sd_monitor import (
@@ -23,13 +24,17 @@ from sd_monitor import (
 
 class TestLoadSettings:
     def test_returns_defaults_when_no_file(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("settings_loader.SETTINGS_LOCATIONS", [str(tmp_path / "nonexistent.json")])
+        monkeypatch.setattr(
+            "settings_loader.SETTINGS_LOCATIONS", [str(tmp_path / "nonexistent.json")]
+        )
         result = load_settings()
         assert result == DEFAULT_SETTINGS
 
     def test_loads_from_file(self, tmp_path, monkeypatch):
         settings_file = tmp_path / "settings.json"
-        settings_file.write_text(json.dumps({"picture_mode": "online", "change_interval_minutes": 30}))
+        settings_file.write_text(
+            json.dumps({"picture_mode": "online", "change_interval_minutes": 30})
+        )
         monkeypatch.setattr("settings_loader.SETTINGS_LOCATIONS", [str(settings_file)])
 
         result = load_settings()
@@ -43,7 +48,9 @@ class TestLoadSettings:
         second = tmp_path / "second.json"
         first.write_text(json.dumps({"picture_mode": "both"}))
         second.write_text(json.dumps({"picture_mode": "local"}))
-        monkeypatch.setattr("settings_loader.SETTINGS_LOCATIONS", [str(first), str(second)])
+        monkeypatch.setattr(
+            "settings_loader.SETTINGS_LOCATIONS", [str(first), str(second)]
+        )
 
         result = load_settings()
         assert result["picture_mode"] == "both"  # first file wins

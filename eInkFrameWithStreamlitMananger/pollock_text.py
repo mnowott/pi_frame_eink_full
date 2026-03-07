@@ -4,7 +4,6 @@ import sys
 import socket
 import json
 import os
-import datetime
 from datetime import datetime, timezone
 
 from pathlib import Path
@@ -16,7 +15,7 @@ BASE_WIDTH, BASE_HEIGHT = 800, 480
 SCALE = 1  # supersampling factor
 
 WIDTH, HEIGHT = BASE_WIDTH * SCALE, BASE_HEIGHT * SCALE
-OUTPUT_FILE = "text.png"   # change this to point into messages/ if you like
+OUTPUT_FILE = "text.png"  # change this to point into messages/ if you like
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 
@@ -26,6 +25,7 @@ from settings_loader import load_settings as _shared_load_settings, DEFAULT_SETT
 
 
 # ---------- RUNTIME HELPERS ----------
+
 
 def has_internet(timeout: float = 3.0) -> bool:
     """Check if we likely have internet access via TCP to 8.8.8.8:53."""
@@ -46,7 +46,9 @@ def summarize_settings(settings: dict) -> str:
     for embedding into the status text.
     """
     mode = settings.get("picture_mode", DEFAULT_SETTINGS["picture_mode"])
-    interval = settings.get("change_interval_minutes", DEFAULT_SETTINGS["change_interval_minutes"])
+    interval = settings.get(
+        "change_interval_minutes", DEFAULT_SETTINGS["change_interval_minutes"]
+    )
     s3_folder = settings.get("s3_folder", DEFAULT_SETTINGS["s3_folder"])
 
     quiet = settings.get("stop_rotation_between")
@@ -92,37 +94,34 @@ def build_status_text() -> str:
 
 palettes = {
     "early_morning": [  # soft, cool, slightly muted
-        (12, 16, 30),     # deep pre-dawn blue
+        (12, 16, 30),  # deep pre-dawn blue
         (220, 225, 235),  # soft misty gray
-        (90, 120, 180),   # cool sky blue
+        (90, 120, 180),  # cool sky blue
         (230, 180, 160),  # pale peach sunrise
         (170, 190, 210),  # cool light blue-gray
         (120, 145, 135),  # muted teal/green
     ],
-
     "late_morning": [  # bright, clear, higher contrast
-        (20, 30, 60),    # deep blue shadow
-        (240, 245, 250), # bright daylight white
+        (20, 30, 60),  # deep blue shadow
+        (240, 245, 250),  # bright daylight white
         (70, 130, 200),  # vivid sky blue
         (240, 190, 80),  # warm sunlight yellow
         (80, 160, 110),  # fresh green
-        (200, 90, 80),   # warm brick/red accent
+        (200, 90, 80),  # warm brick/red accent
     ],
-
     "afternoon_golden": [  # warm, golden, slightly richer
-        (30, 25, 45),    # deep muted violet/blue shadow
-        (245, 235, 220), # warm light cream
+        (30, 25, 45),  # deep muted violet/blue shadow
+        (245, 235, 220),  # warm light cream
         (80, 110, 170),  # softened sky blue
         (230, 170, 70),  # golden hour orange
         (200, 110, 70),  # warm terracotta
         (120, 150, 90),  # sunlit olive/green
     ],
-
     "evening_night": [  # deep, moody, with a few “neon” accents
-        (8, 10, 25),     # near-black navy
-        (220, 225, 235), # cool pale gray highlight
-        (40, 70, 140),   # deep blue
-        (180, 60, 80),   # muted magenta/red accent
+        (8, 10, 25),  # near-black navy
+        (220, 225, 235),  # cool pale gray highlight
+        (40, 70, 140),  # deep blue
+        (180, 60, 80),  # muted magenta/red accent
         (240, 190, 90),  # warm lamp light
         (60, 140, 120),  # deep teal accent
     ],
@@ -223,12 +222,10 @@ def pollock_background(width, height, scale):
 FONT_CANDIDATES = [
     # 1) Optional project-local font (if you want to drop a TTF into ./fonts/)
     SCRIPT_DIR / "fonts" / "DejaVuSans.ttf",
-
     # 2) Common system paths on Raspberry Pi OS
     Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
     Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
     Path("/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"),
-
     # 3) Name-only fallbacks (searched via fontconfig)
     Path("DejaVuSans.ttf"),
     Path("DejaVuSans-Bold.ttf"),
@@ -290,13 +287,17 @@ def load_classy_font(size):
         except IOError as e:
             # Only log for existing files or first few candidates to avoid spam
             if isinstance(path, Path) and path.exists():
-                print(f"[pollock_text] Found font file but could not load '{path_str}': {e}")
+                print(
+                    f"[pollock_text] Found font file but could not load '{path_str}': {e}"
+                )
             last_error = e
             continue
 
     # Fallback – but default font ignores size, so log loudly.
-    print(f"[pollock_text] WARNING: Falling back to PIL default bitmap font. "
-          f"Font size changes will NOT be visible. Last error: {last_error}")
+    print(
+        f"[pollock_text] WARNING: Falling back to PIL default bitmap font. "
+        f"Font size changes will NOT be visible. Last error: {last_error}"
+    )
     return ImageFont.load_default()
 
 
@@ -345,8 +346,7 @@ def draw_centered_text_on_white_card(img, text, scale):
         padding_y = int(font_size * 0.20)
 
         total_text_height = (
-            sum(h for _, h in line_sizes)
-            + (len(line_sizes) - 1) * line_spacing
+            sum(h for _, h in line_sizes) + (len(line_sizes) - 1) * line_spacing
         )
 
         card_width = min(max_line_width + 2 * padding_x, max_card_width)
@@ -435,8 +435,10 @@ def draw_centered_text_on_white_card(img, text, scale):
         used_font_size,
     ) = chosen
 
-    print(f"[pollock_text] Final chosen font size: {used_font_size}, "
-          f"lines={len(lines)}, card={card_width}x{card_height}")
+    print(
+        f"[pollock_text] Final chosen font size: {used_font_size}, "
+        f"lines={len(lines)}, card={card_width}x{card_height}"
+    )
 
     card_left = (width - card_width) // 2
     card_top = (height - card_height) // 2
@@ -468,7 +470,7 @@ def draw_centered_text_on_white_card(img, text, scale):
     current_y = card_top + padding_y
     text_color = (40, 40, 50, 255)
 
-    for (line, (w, h)) in zip(lines, line_sizes):
+    for line, (w, h) in zip(lines, line_sizes):
         x_line = card_left + (card_width - w) // 2
         o_draw.text((x_line, current_y), line, font=font, fill=text_color)
         current_y += h + line_spacing
@@ -494,11 +496,12 @@ def generate_status_image(custom_text: str | None = None) -> Image.Image:
     draw_centered_text_on_white_card(bg, text, SCALE)
 
     # 3) Downscale to final display resolution
-    final = bg.resize((BASE_WIDTH, BASE_HEIGHT), resample=Image.LANCZOS)
+    final = bg.resize((BASE_WIDTH, BASE_HEIGHT), resample=Image.LANCZOS)  # type: ignore[attr-defined]
     return final
 
 
 # ---------- MAIN ----------
+
 
 def main():
     # If you pass text on the command line, use that; otherwise build

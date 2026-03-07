@@ -1,4 +1,5 @@
 """Tests for image cropping logic extracted from file_tab.py."""
+
 from PIL import Image
 
 

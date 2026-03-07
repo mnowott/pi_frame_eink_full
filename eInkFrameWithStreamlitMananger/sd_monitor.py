@@ -7,7 +7,12 @@ import subprocess
 import signal
 from datetime import datetime, time as dtime
 
-from settings_loader import load_settings as _load_settings, get_refresh_time, DEFAULT_SETTINGS, SETTINGS_LOCATIONS
+from settings_loader import (
+    load_settings as _load_settings,
+    get_refresh_time,
+    DEFAULT_SETTINGS,
+    SETTINGS_LOCATIONS,
+)
 
 # Fixed SD card mount path (from the systemd mount/udev setup)
 SD_PATH = "/mnt/epaper_sd"
@@ -29,6 +34,7 @@ def load_settings():
 # ---------------------------------------------------------
 # Quiet hours handling
 # ---------------------------------------------------------
+
 
 def parse_hhmm(value: str) -> dtime | None:
     try:
@@ -81,6 +87,7 @@ def in_quiet_hours(now: datetime, evening: dtime, morning: dtime) -> bool:
 # Process handling
 # ---------------------------------------------------------
 
+
 def start_frame_manager(sd_path, settings):
     """Start the image processing script as a separate process."""
     global process
@@ -93,7 +100,9 @@ def start_frame_manager(sd_path, settings):
 
         refresh_time_sec = get_refresh_time(sd_path, settings=settings)
 
-        print(f"[sd_monitor] Starting frame_manager with path {sd_path} and refresh_time_sec={refresh_time_sec}...")
+        print(
+            f"[sd_monitor] Starting frame_manager with path {sd_path} and refresh_time_sec={refresh_time_sec}..."
+        )
         process = subprocess.Popen(
             ["python3", IMAGE_PROCESSING_SCRIPT, sd_path, str(refresh_time_sec)],
             stdout=sys.stdout,
@@ -126,6 +135,7 @@ def stop_frame_manager(reason: str = ""):
 # SD content change detection
 # ---------------------------------------------------------
 
+
 def compute_tree_stats(root: str) -> tuple[float, int]:
     """
     Walk the directory tree under 'root' and return:
@@ -147,9 +157,8 @@ def compute_tree_stats(root: str) -> tuple[float, int]:
         dirpath_abs = os.path.abspath(dirpath)
 
         # Skip the processed-image cache subtree (_epaper_pic)
-        if (
-            dirpath_abs == processed_root
-            or dirpath_abs.startswith(processed_root + os.sep)
+        if dirpath_abs == processed_root or dirpath_abs.startswith(
+            processed_root + os.sep
         ):
             dirs[:] = []  # don't descend further
             continue
@@ -171,6 +180,7 @@ def compute_tree_stats(root: str) -> tuple[float, int]:
 # SD monitoring loop
 # ---------------------------------------------------------
 
+
 def monitor_sd_card():
     """Continuously monitor the SD card at /mnt/epaper_sd and restart frame_manager on insert/remove, quiet hours, or SD content changes."""
     global sd_was_removed
@@ -181,7 +191,9 @@ def monitor_sd_card():
     was_in_quiet = False
 
     if quiet_cfg:
-        print(f"[sd_monitor] Quiet hours configured: {settings.get('stop_rotation_between')} (parsed={quiet_cfg})")
+        print(
+            f"[sd_monitor] Quiet hours configured: {settings.get('stop_rotation_between')} (parsed={quiet_cfg})"
+        )
     else:
         print("[sd_monitor] No quiet hours configured.")
 
@@ -195,7 +207,9 @@ def monitor_sd_card():
         try:
             # RELOAD SETTINGS EACH LOOP
             settings = load_settings()
-            quiet_cfg = parse_stop_rotation_between(settings.get("stop_rotation_between"))
+            quiet_cfg = parse_stop_rotation_between(
+                settings.get("stop_rotation_between")
+            )
 
             now = datetime.now()
             in_quiet = False
@@ -203,7 +217,9 @@ def monitor_sd_card():
                 in_quiet = in_quiet_hours(now, quiet_cfg[0], quiet_cfg[1])
 
             # Card is considered present if /mnt/epaper_sd is a mounted FS and accessible
-            sd_mounted = os.path.ismount(SD_PATH) and os.access(SD_PATH, os.R_OK | os.X_OK)
+            sd_mounted = os.path.ismount(SD_PATH) and os.access(
+                SD_PATH, os.R_OK | os.X_OK
+            )
 
             if sd_mounted:
                 sd_path = SD_PATH
@@ -221,16 +237,22 @@ def monitor_sd_card():
                     need_start = False
 
                     if not sd_inserted:
-                        print("[sd_monitor] SD card detected. Starting frame_manager...")
+                        print(
+                            "[sd_monitor] SD card detected. Starting frame_manager..."
+                        )
                         need_start = True
                     elif sd_was_removed:
-                        print("[sd_monitor] SD card reinserted. Restarting frame_manager...")
+                        print(
+                            "[sd_monitor] SD card reinserted. Restarting frame_manager..."
+                        )
                         need_start = True
                     elif process is None or process.poll() is not None:
                         print("[sd_monitor] frame_manager not running, starting...")
                         need_start = True
                     elif was_in_quiet:
-                        print("[sd_monitor] Quiet hours ended, restarting frame_manager...")
+                        print(
+                            "[sd_monitor] Quiet hours ended, restarting frame_manager..."
+                        )
                         need_start = True
 
                     if need_start:
@@ -240,7 +262,9 @@ def monitor_sd_card():
                         was_in_quiet = False
                         # Establish a baseline stats snapshot
                         try:
-                            last_tree_mtime, last_tree_count = compute_tree_stats(sd_path)
+                            last_tree_mtime, last_tree_count = compute_tree_stats(
+                                sd_path
+                            )
                             last_tree_check = time.time()
                             print(
                                 f"[sd_monitor] Initial SD content baseline: "
@@ -256,7 +280,9 @@ def monitor_sd_card():
                         if (now_ts - last_tree_check) >= MTIME_CHECK_INTERVAL:
                             last_tree_check = now_ts
                             try:
-                                current_mtime, current_count = compute_tree_stats(sd_path)
+                                current_mtime, current_count = compute_tree_stats(
+                                    sd_path
+                                )
                                 if last_tree_mtime is None or last_tree_count is None:
                                     last_tree_mtime = current_mtime
                                     last_tree_count = current_count
@@ -278,7 +304,9 @@ def monitor_sd_card():
                                     last_tree_count = current_count
                                     start_frame_manager(sd_path, settings)
                             except Exception as e:
-                                print(f"[sd_monitor] Error computing SD content stats: {e}")
+                                print(
+                                    f"[sd_monitor] Error computing SD content stats: {e}"
+                                )
 
             else:
                 # No SD card mounted at /mnt/epaper_sd

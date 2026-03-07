@@ -10,7 +10,7 @@ from botocore.exceptions import ClientError
 import os
 
 # ---------- S3 config ----------
-S3_BUCKET = os.getenv("S3_BUCKET")       # <-- change to your bucket
+S3_BUCKET = os.getenv("S3_BUCKET")  # <-- change to your bucket
 REGION = os.getenv("AWS_DEFAULT_REGION") or os.getenv("REGION")
 
 s3 = boto3.client("s3", region_name=REGION)
@@ -116,7 +116,7 @@ def create_zip_upload_and_get_url(prefix: str, expires_in: int = 3600) -> str:
 def render_wifi_download_section():
     st.markdown("### Download Wi-Fi configuration")
 
-    wifi_path = Path(__file__).parent.parent / "data" /"wifi.json"
+    wifi_path = Path(__file__).parent.parent / "data" / "wifi.json"
 
     try:
         wifi_bytes = wifi_path.read_bytes()
@@ -164,7 +164,7 @@ def render_s3_zip_section(output_folder: str, online: bool):
         )
 
 
-def render(output_folder: str|None, online: bool):
+def render(output_folder: str | None, online: bool):
     """Render the 'Download' tab."""
     st.subheader("Downloads")
     if output_folder is None:

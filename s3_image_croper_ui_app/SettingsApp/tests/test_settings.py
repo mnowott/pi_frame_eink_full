@@ -17,21 +17,25 @@ from settingsapp.app import (
 class TestParseTimeStr:
     def test_valid_time(self):
         from datetime import time
+
         result = parse_time_str("22:30", fallback=time(0, 0))
         assert result == time(22, 30)
 
     def test_none_returns_fallback(self):
         from datetime import time
+
         fallback = time(6, 0)
         assert parse_time_str(None, fallback) == fallback
 
     def test_invalid_returns_fallback(self):
         from datetime import time
+
         fallback = time(6, 0)
         assert parse_time_str("not_a_time", fallback) == fallback
 
     def test_empty_returns_fallback(self):
         from datetime import time
+
         fallback = time(6, 0)
         assert parse_time_str("", fallback) == fallback
 
@@ -39,18 +43,29 @@ class TestParseTimeStr:
 class TestLoadSettings:
     @patch("settingsapp.app.sd_mount_available", return_value=False)
     def test_returns_defaults_when_no_file(self, mock_sd, tmp_path, monkeypatch):
-        monkeypatch.setattr("settingsapp.app.HOME_SETTINGS_PATH", tmp_path / "nonexistent.json")
-        monkeypatch.setattr("settingsapp.app.SD_SETTINGS_PATH", tmp_path / "nonexistent2.json")
+        monkeypatch.setattr(
+            "settingsapp.app.HOME_SETTINGS_PATH", tmp_path / "nonexistent.json"
+        )
+        monkeypatch.setattr(
+            "settingsapp.app.SD_SETTINGS_PATH", tmp_path / "nonexistent2.json"
+        )
         result = load_settings()
         assert result["picture_mode"] == DEFAULT_SETTINGS["picture_mode"]
-        assert result["change_interval_minutes"] == DEFAULT_SETTINGS["change_interval_minutes"]
+        assert (
+            result["change_interval_minutes"]
+            == DEFAULT_SETTINGS["change_interval_minutes"]
+        )
 
     @patch("settingsapp.app.sd_mount_available", return_value=False)
     def test_loads_from_home(self, mock_sd, tmp_path, monkeypatch):
         home_settings = tmp_path / "settings.json"
-        home_settings.write_text(json.dumps({"picture_mode": "online", "change_interval_minutes": 30}))
+        home_settings.write_text(
+            json.dumps({"picture_mode": "online", "change_interval_minutes": 30})
+        )
         monkeypatch.setattr("settingsapp.app.HOME_SETTINGS_PATH", home_settings)
-        monkeypatch.setattr("settingsapp.app.SD_SETTINGS_PATH", tmp_path / "nonexistent.json")
+        monkeypatch.setattr(
+            "settingsapp.app.SD_SETTINGS_PATH", tmp_path / "nonexistent.json"
+        )
 
         result = load_settings()
         assert result["picture_mode"] == "online"

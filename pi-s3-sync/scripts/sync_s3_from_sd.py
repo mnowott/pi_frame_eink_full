@@ -153,7 +153,8 @@ def load_config(wifi_path: str) -> dict:
 
     if missing:
         raise ValueError(
-            "Missing AWS config values in wifi.json or environment: " + ", ".join(missing)
+            "Missing AWS config values in wifi.json or environment: "
+            + ", ".join(missing)
         )
 
     # Optional Wi-Fi settings
@@ -324,8 +325,9 @@ def sync_bucket_to_folder(cfg: dict, target_folder: str) -> int:
         s3_url,
         target_folder,
         "--only-show-errors",
-        "--delete",          # respect deletions from S3
-        "--exclude", "*.zip" # ignore any .zip object
+        "--delete",  # respect deletions from S3
+        "--exclude",
+        "*.zip",  # ignore any .zip object
     ]
 
     debug(f"Running: {' '.join(cmd)}")

@@ -2,6 +2,7 @@ import argparse
 import subprocess
 from pathlib import Path
 
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=8501)

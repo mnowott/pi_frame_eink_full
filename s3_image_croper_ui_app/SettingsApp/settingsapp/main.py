@@ -6,7 +6,7 @@ from pathlib import Path
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=80)         # <-- default 80 now
+    parser.add_argument("--port", type=int, default=80)  # <-- default 80 now
     parser.add_argument("--address", default="0.0.0.0")
     args = parser.parse_args()
 

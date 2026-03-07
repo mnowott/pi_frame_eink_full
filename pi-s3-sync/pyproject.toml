@@ -10,6 +10,9 @@ python = "^3.9"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"
+pytest-cov = "^6.0"
+mypy = "^1.10"
+ruff = "^0.8"
 
 [build-system]
 requires = ["poetry-core"]

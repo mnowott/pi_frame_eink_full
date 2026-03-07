@@ -23,7 +23,6 @@ def has_internet(timeout: float = 3.0) -> bool:
         return False
 
 
-
 st.set_page_config(
     page_title=f"Fanimly eInk Frame Image Cropper {CROP_HEIGHT}x{CROP_WIDTH}",
     page_icon="🖼️",
@@ -72,7 +71,7 @@ if uploaded_files:
     selected_file = uploaded_files[names.index(selected_name)]
 else:
     selected_name = None
-    selected_file = None
+    selected_file = None  # type: ignore[assignment]
 
 st.sidebar.header("Move Selection")
 step = st.sidebar.number_input(
@@ -103,7 +102,9 @@ output_folder = "images"
 
 # ---------- Tabs ----------
 
-tab_info, tab_manage, tab_view, tab_dl = st.tabs(["Info","Image management", "View", "Downloads"])
+tab_info, tab_manage, tab_view, tab_dl = st.tabs(
+    ["Info", "Image management", "View", "Downloads"]
+)
 
 with tab_info:
     if not online:

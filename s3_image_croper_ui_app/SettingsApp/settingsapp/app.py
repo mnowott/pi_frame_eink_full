@@ -23,9 +23,9 @@ HOME_SETTINGS_PATH = HOME_CONFIG_DIR / "settings.json"
 
 # Default settings
 DEFAULT_SETTINGS = {
-    "picture_mode": "local",          # local | online | both
-    "change_interval_minutes": 15,    # integer minutes
-    "stop_rotation_between": None,    # or {"evening": "HH:MM", "morning": "HH:MM"}
+    "picture_mode": "local",  # local | online | both
+    "change_interval_minutes": 15,  # integer minutes
+    "stop_rotation_between": None,  # or {"evening": "HH:MM", "morning": "HH:MM"}
     "s3_folder": "s3_folder",
 }
 
@@ -33,6 +33,7 @@ DEFAULT_SETTINGS = {
 # -------------------------------------------------------------------
 # Helpers
 # -------------------------------------------------------------------
+
 
 def sd_mount_available() -> bool:
     """
@@ -147,6 +148,7 @@ def parse_time_str(value: str | None, fallback: time) -> time:
 # -------------------------------------------------------------------
 # Streamlit UI
 # -------------------------------------------------------------------
+
 
 def main():
     st.title("ePaper Frame Settings")
@@ -264,9 +266,7 @@ def main():
                     f"with value {interval_seconds} seconds."
                 )
             except Exception as e:
-                st.error(
-                    f"Failed to write refresh_time.txt to {SD_MOUNT_PATH}: {e}"
-                )
+                st.error(f"Failed to write refresh_time.txt to {SD_MOUNT_PATH}: {e}")
         else:
             st.info(
                 f"Skipping creation of refresh_time.txt because `{SD_MOUNT_PATH}` "

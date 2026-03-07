@@ -14,6 +14,7 @@ import sync_s3_from_sd as sync
 
 # ---------- _first_nonempty ----------
 
+
 class TestFirstNonempty:
     def test_returns_first_non_empty(self):
         assert sync._first_nonempty("", "  ", "hello", "world") == "hello"
@@ -32,6 +33,7 @@ class TestFirstNonempty:
 
 
 # ---------- load_config ----------
+
 
 class TestLoadConfig:
     def test_loads_standard_keys(self, tmp_path):
@@ -109,12 +111,17 @@ class TestLoadConfig:
 
 # ---------- ensure_wifi_connection ----------
 
+
 class TestEnsureWifiConnection:
     def test_skips_when_no_ssid(self):
-        assert sync.ensure_wifi_connection({"wifi_name": None, "wifi_password": "x"}) == 0
+        assert (
+            sync.ensure_wifi_connection({"wifi_name": None, "wifi_password": "x"}) == 0
+        )
 
     def test_skips_when_no_password(self):
-        assert sync.ensure_wifi_connection({"wifi_name": "x", "wifi_password": None}) == 0
+        assert (
+            sync.ensure_wifi_connection({"wifi_name": "x", "wifi_password": None}) == 0
+        )
 
     def test_skips_when_ssid_too_long(self):
         cfg = {"wifi_name": "A" * 33, "wifi_password": "pass"}
@@ -126,6 +133,7 @@ class TestEnsureWifiConnection:
 
 
 # ---------- determine_base_path ----------
+
 
 class TestDetermineBasePath:
     def test_uses_home_without_sudo(self, monkeypatch):
@@ -140,6 +148,7 @@ class TestDetermineBasePath:
 
 
 # ---------- main ----------
+
 
 class TestMain:
     def test_returns_1_when_no_wifi_json(self, monkeypatch, tmp_path):

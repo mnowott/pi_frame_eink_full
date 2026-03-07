@@ -25,9 +25,8 @@ class ImageConverter:
             #   This avoids re-processing already converted images
             #   and prevents any processing loops.
             # ------------------------------------------------------
-            if (
-                root_abs == self.output_dir
-                or root_abs.startswith(self.output_dir + os.sep)
+            if root_abs == self.output_dir or root_abs.startswith(
+                self.output_dir + os.sep
             ):
                 dirs[:] = []  # don't descend further
                 continue

@@ -12,7 +12,7 @@ import os
 dotenv.load_dotenv(pyhere.here("ImageUiApp/.env"))
 
 # ---------- S3 config ----------
-S3_BUCKET = os.getenv("S3_BUCKET")       # <-- change to your bucket
+S3_BUCKET = os.getenv("S3_BUCKET")  # <-- change to your bucket
 REGION = os.getenv("AWS_DEFAULT_REGION") or os.getenv("REGION")
 
 s3 = boto3.client("s3", region_name=REGION)
@@ -45,8 +45,7 @@ def list_saved_images(prefix: str):
     keys = [
         obj["Key"]
         for obj in resp["Contents"]
-        if Path(obj["Key"]).suffix.lower() in exts
-           and not obj["Key"].endswith("/")
+        if Path(obj["Key"]).suffix.lower() in exts and not obj["Key"].endswith("/")
     ]
     keys.sort()
     return keys

@@ -1,14 +1,15 @@
 """Shared settings loader for all eInkFrame display-stack modules."""
+
 import json
 import os
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DEFAULT_SETTINGS = {
-    "picture_mode": "local",          # local | online | both
-    "change_interval_minutes": 15,    # integer minutes
-    "stop_rotation_between": None,    # or {"evening": "HH:MM", "morning": "HH:MM"}
-    "s3_folder": "s3_folder",         # folder name on SD card for "online" images
+    "picture_mode": "local",  # local | online | both
+    "change_interval_minutes": 15,  # integer minutes
+    "stop_rotation_between": None,  # or {"evening": "HH:MM", "morning": "HH:MM"}
+    "s3_folder": "s3_folder",  # folder name on SD card for "online" images
 }
 
 SETTINGS_LOCATIONS = [
@@ -38,7 +39,9 @@ def load_settings(caller: str = "settings_loader") -> dict:
     return settings
 
 
-def get_refresh_time(sd_path: str, settings: dict = None, filename: str = "refresh_time.txt") -> int:
+def get_refresh_time(
+    sd_path: str, settings: dict | None = None, filename: str = "refresh_time.txt"
+) -> int:
     """Determine refresh time in seconds from settings, SD file, or default (600)."""
     if settings is None:
         settings = DEFAULT_SETTINGS
@@ -46,7 +49,7 @@ def get_refresh_time(sd_path: str, settings: dict = None, filename: str = "refre
     change_interval = settings.get("change_interval_minutes")
     try:
         if change_interval is not None:
-            minutes = int(change_interval)
+            minutes = int(change_interval)  # type: ignore[arg-type]
             if minutes > 0:
                 return minutes * 60
     except Exception as e:
@@ -60,7 +63,9 @@ def get_refresh_time(sd_path: str, settings: dict = None, filename: str = "refre
                 if number.isdigit():
                     return int(number)
                 else:
-                    print(f"[settings_loader] Invalid number in {filename}, defaulting to 600")
+                    print(
+                        f"[settings_loader] Invalid number in {filename}, defaulting to 600"
+                    )
                     return 600
         except Exception as e:
             print(f"[settings_loader] Error reading {filename}: {e}")
