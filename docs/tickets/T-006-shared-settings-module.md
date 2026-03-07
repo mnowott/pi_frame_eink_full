@@ -1,6 +1,6 @@
 # T-006: Extract duplicated load_settings() into shared module
 
-Status: Open
+Status: Closed
 Last updated: 2026-03-07
 
 ## Problem

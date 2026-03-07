@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 from image_converter import ImageConverter
 from display_manager import DisplayManager
+from settings_loader import load_settings as _load_settings, DEFAULT_SETTINGS
 import os
 import time
 import shutil
 import sys
-import json
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -19,42 +19,9 @@ PIC_PATH = None
 # Optional temp directory used when picture_mode == "local"
 FILTERED_SD_PATH = os.path.join(SCRIPT_DIR, "sd_filtered")
 
-# ---------------------------------------------------------
-# Settings handling
-# ---------------------------------------------------------
-
-DEFAULT_SETTINGS = {
-    "picture_mode": "local",          # local | online | both
-    "change_interval_minutes": 15,    # NOT used directly here (sd_monitor handles refresh time)
-    "stop_rotation_between": None,    # handled in sd_monitor, not here
-    "s3_folder": "s3_folder",         # folder name on SD card for "online" images
-}
-
-SETTINGS_LOCATIONS = [
-    "/mnt/epaper_sd/epaper_settings/settings.json",  # NEW: SD card primary config
-    "/etc/epaper_settings/settings.json",
-    os.path.expanduser("~/.config/epaper_settings/settings.json"),
-    os.path.join(SCRIPT_DIR, "settings.json"),
-]
-
 
 def load_settings():
-    """Load settings.json from one of the predefined locations, shallow-merging into DEFAULT_SETTINGS."""
-    settings = DEFAULT_SETTINGS.copy()
-    for path in SETTINGS_LOCATIONS:
-        if os.path.exists(path):
-            try:
-                with open(path, "r") as f:
-                    data = json.load(f)
-                if isinstance(data, dict):
-                    for key in DEFAULT_SETTINGS.keys():
-                        if key in data:
-                            settings[key] = data[key]
-                print(f"[frame_manager] Loaded settings from {path}")
-                break
-            except Exception as e:
-                print(f"[frame_manager] Error reading settings from {path}: {e}")
-    return settings
+    return _load_settings(caller="frame_manager")
 
 
 def build_local_only_source(sd_path: str, s3_folder_name: str) -> str:

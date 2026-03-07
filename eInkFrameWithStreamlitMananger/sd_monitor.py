@@ -5,8 +5,9 @@ import time
 import threading
 import subprocess
 import signal
-import json
 from datetime import datetime, time as dtime
+
+from settings_loader import load_settings as _load_settings, get_refresh_time, DEFAULT_SETTINGS, SETTINGS_LOCATIONS
 
 # Fixed SD card mount path (from the systemd mount/udev setup)
 SD_PATH = "/mnt/epaper_sd"
@@ -20,80 +21,9 @@ _process_lock = threading.Lock()
 process = None  # Holds the subprocess running frame_manager.py
 sd_was_removed = False  # Track if SD card was removed
 
-# ---------------------------------------------------------
-# Settings handling
-# ---------------------------------------------------------
-
-DEFAULT_SETTINGS = {
-    "picture_mode": "local",          # local | online | both
-    "change_interval_minutes": 15,    # integer minutes
-    "stop_rotation_between": None,    # or {"evening": "HH:MM", "morning": "HH:MM"}
-    "s3_folder": "s3_folder",         # folder name on SD card for "online" images
-}
-
-SETTINGS_LOCATIONS = [
-    "/mnt/epaper_sd/epaper_settings/settings.json",  # NEW: SD card primary config
-    "/etc/epaper_settings/settings.json",
-    os.path.expanduser("~/.config/epaper_settings/settings.json"),
-    os.path.join(SCRIPT_DIR, "settings.json"),
-]
-
 
 def load_settings():
-    """Load settings.json from one of the predefined locations, shallow-merging into DEFAULT_SETTINGS."""
-    settings = DEFAULT_SETTINGS.copy()
-    for path in SETTINGS_LOCATIONS:
-        if os.path.exists(path):
-            try:
-                with open(path, "r") as f:
-                    data = json.load(f)
-                if isinstance(data, dict):
-                    for key in DEFAULT_SETTINGS.keys():
-                        if key in data:
-                            settings[key] = data[key]
-                print(f"[sd_monitor] Loaded settings from {path}")
-                break
-            except Exception as e:
-                print(f"[sd_monitor] Error reading settings from {path}: {e}")
-    return settings
-
-
-# ---------------------------------------------------------
-# Refresh time handling
-# ---------------------------------------------------------
-
-def get_refresh_time(sd_path, filename="refresh_time.txt", settings=None):
-    """Determine refresh time in seconds, preferring settings.json, falling back to SD card file, then default."""
-    if settings is None:
-        settings = DEFAULT_SETTINGS
-
-    # 1) Try settings.json (change_interval_minutes)
-    change_interval = settings.get("change_interval_minutes")
-    try:
-        if change_interval is not None:
-            minutes = int(change_interval)
-            if minutes > 0:
-                return minutes * 60
-    except Exception as e:
-        print(f"[sd_monitor] Invalid change_interval_minutes in settings: {e}")
-
-    # 2) Fallback to refresh_time.txt on SD card
-    file_path = os.path.join(sd_path, filename)
-    if os.path.exists(file_path):
-        try:
-            with open(file_path, "r") as f:
-                number = f.read().strip()
-                if number.isdigit():
-                    return int(number)
-                else:
-                    print(f"[sd_monitor] Invalid number in {filename}, defaulting to 600")
-                    return 600
-        except Exception as e:
-            print(f"[sd_monitor] Error reading {filename}: {e}")
-            return 600
-    else:
-        print(f"[sd_monitor] {filename} not found, defaulting to 600")
-        return 600
+    return _load_settings(caller="sd_monitor")
 
 
 # ---------------------------------------------------------

@@ -23,14 +23,14 @@ from sd_monitor import (
 
 class TestLoadSettings:
     def test_returns_defaults_when_no_file(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("sd_monitor.SETTINGS_LOCATIONS", [str(tmp_path / "nonexistent.json")])
+        monkeypatch.setattr("settings_loader.SETTINGS_LOCATIONS", [str(tmp_path / "nonexistent.json")])
         result = load_settings()
         assert result == DEFAULT_SETTINGS
 
     def test_loads_from_file(self, tmp_path, monkeypatch):
         settings_file = tmp_path / "settings.json"
         settings_file.write_text(json.dumps({"picture_mode": "online", "change_interval_minutes": 30}))
-        monkeypatch.setattr("sd_monitor.SETTINGS_LOCATIONS", [str(settings_file)])
+        monkeypatch.setattr("settings_loader.SETTINGS_LOCATIONS", [str(settings_file)])
 
         result = load_settings()
         assert result["picture_mode"] == "online"
@@ -43,7 +43,7 @@ class TestLoadSettings:
         second = tmp_path / "second.json"
         first.write_text(json.dumps({"picture_mode": "both"}))
         second.write_text(json.dumps({"picture_mode": "local"}))
-        monkeypatch.setattr("sd_monitor.SETTINGS_LOCATIONS", [str(first), str(second)])
+        monkeypatch.setattr("settings_loader.SETTINGS_LOCATIONS", [str(first), str(second)])
 
         result = load_settings()
         assert result["picture_mode"] == "both"  # first file wins
@@ -53,7 +53,7 @@ class TestLoadSettings:
         good = tmp_path / "good.json"
         bad.write_text("not json")
         good.write_text(json.dumps({"picture_mode": "online"}))
-        monkeypatch.setattr("sd_monitor.SETTINGS_LOCATIONS", [str(bad), str(good)])
+        monkeypatch.setattr("settings_loader.SETTINGS_LOCATIONS", [str(bad), str(good)])
 
         result = load_settings()
         assert result["picture_mode"] == "online"

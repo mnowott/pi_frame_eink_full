@@ -22,29 +22,13 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 
 # ---------- SETTINGS CONFIG ----------
 
-SD_MOUNT_PATH = Path("/mnt/epaper_sd")
-SD_CONFIG_DIR = SD_MOUNT_PATH / "epaper_settings"
-SD_SETTINGS_PATH = SD_CONFIG_DIR / "settings.json"
-
-HOME_CONFIG_DIR = Path.home() / ".config" / "epaper_settings"
-HOME_SETTINGS_PATH = HOME_CONFIG_DIR / "settings.json"
-
-
-DEFAULT_SETTINGS = {
-    "picture_mode": "local",          # local | online | both
-    "change_interval_minutes": 15,    # integer minutes
-    "stop_rotation_between": None,    # or {"evening": "HH:MM", "morning": "HH:MM"}
-    "s3_folder": "s3_folder",
-}
+from settings_loader import load_settings as _shared_load_settings, DEFAULT_SETTINGS
 
 
 # ---------- RUNTIME HELPERS ----------
 
 def has_internet(timeout: float = 3.0) -> bool:
-    """
-    Check if we likely have internet access by trying to open a TCP
-    connection to 8.8.8.8:53 (no DNS lookup needed).
-    """
+    """Check if we likely have internet access via TCP to 8.8.8.8:53."""
     try:
         socket.create_connection(("8.8.8.8", 53), timeout=timeout)
         return True
@@ -53,35 +37,7 @@ def has_internet(timeout: float = 3.0) -> bool:
 
 
 def load_settings() -> dict:
-    """
-    Prefer settings on the SD card (persistent). Fall back to the legacy
-    ~/.config/epaper_settings/settings.json if needed.
-    """
-    settings = DEFAULT_SETTINGS.copy()
-
-    # 1) Try SD card config first
-    try:
-        if SD_SETTINGS_PATH.exists():
-            with SD_SETTINGS_PATH.open("r", encoding="utf-8") as f:
-                data = json.load(f)
-            if isinstance(data, dict):
-                settings.update(data)
-            return settings
-    except Exception as e:
-        settings["_error"] = f"Error reading settings from SD: {e}"
-
-    # 2) Fallback: legacy home config
-    try:
-        if HOME_SETTINGS_PATH.exists():
-            with HOME_SETTINGS_PATH.open("r", encoding="utf-8") as f:
-                data = json.load(f)
-            if isinstance(data, dict):
-                settings.update(data)
-    except Exception as e:
-        settings["_error"] = f"Error reading settings from home: {e}"
-
-    return settings
-
+    return _shared_load_settings(caller="pollock_text")
 
 
 def summarize_settings(settings: dict) -> str:
