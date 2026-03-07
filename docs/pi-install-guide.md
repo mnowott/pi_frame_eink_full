@@ -227,6 +227,27 @@ echo "PasswordAuthentication no" | sudo tee -a /etc/ssh/sshd_config.d/99-epaper.
 sudo systemctl reload sshd
 ```
 
+### Poetry install fails with "All attempts to connect to pypi.org failed"
+
+On Pi Zero 2W, Poetry's HTTP client tries IPv6 addresses first. If the Pi lacks IPv6 connectivity, every request hangs until timeout — even though IPv4 works fine. The install script handles this automatically by temporarily disabling IPv6 during Poetry install.
+
+If running manually, disable IPv6 first:
+```bash
+sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+# ... run poetry install ...
+sudo sysctl -w net.ipv6.conf.all.disable_ipv6=0
+sudo sysctl -w net.ipv6.conf.default.disable_ipv6=0
+```
+
+### Poetry install fails with "Permission denied" on cache
+
+If `poetry lock` ran as root (via `sudo bash install_settings.sh`), the cache at `~/.cache/pypoetry/` is owned by root. Fix with:
+```bash
+sudo chown -R pi:pi ~/.cache/pypoetry
+```
+The install script handles this automatically.
+
 ### SD card not detected
 
 ```bash

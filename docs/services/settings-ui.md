@@ -76,6 +76,10 @@ cd s3_image_croper_ui_app
 sudo bash install_settings.sh
 ```
 
+The install script handles two common Pi Zero 2W issues automatically:
+- **IPv6 timeout:** Poetry tries IPv6 first; if unreachable, requests hang. The script temporarily disables IPv6 during install.
+- **Cache ownership:** `poetry lock` runs as root, creating root-owned cache files. The script fixes ownership before running `poetry install` as the real user.
+
 ## Debugging
 
 ```bash

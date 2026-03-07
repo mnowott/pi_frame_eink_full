@@ -46,6 +46,21 @@ CURRENT_HOME=$(eval echo "~$CURRENT_USER")
 echo "Regenerating poetry.lock (in case pyproject.toml drifted)..."
 poetry lock
 
+# poetry lock runs as root, which creates cache files owned by root.
+# Fix ownership so the real user can write to the cache during install.
+if [ -d "$CURRENT_HOME/.cache/pypoetry" ]; then
+  chown -R "$CURRENT_USER:$CURRENT_USER" "$CURRENT_HOME/.cache/pypoetry"
+fi
+
+# Pi Zero 2W often lacks IPv6 connectivity, but Poetry's HTTP client tries
+# IPv6 first and hangs until timeout. Temporarily disable IPv6 to force IPv4.
+IPV6_WAS_DISABLED=$(sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null || echo 0)
+if [ "$IPV6_WAS_DISABLED" = "0" ]; then
+  echo "Temporarily disabling IPv6 (Poetry workaround for Pi Zero Wi-Fi)..."
+  sysctl -w net.ipv6.conf.all.disable_ipv6=1 >/dev/null
+  sysctl -w net.ipv6.conf.default.disable_ipv6=1 >/dev/null
+fi
+
 # Install dependencies as the real user (not root) so the venv
 # lands in ~pi/.cache/pypoetry/virtualenvs, not /root/.cache.
 # Retry up to 5 times — Pi Zero Wi-Fi often times out on large downloads.
@@ -60,10 +75,22 @@ for attempt in 1 2 3 4 5; do
   fi
   if [ "$attempt" -eq 5 ]; then
     echo "ERROR: Poetry install failed after 5 attempts."
+    # Re-enable IPv6 before exiting
+    if [ "$IPV6_WAS_DISABLED" = "0" ]; then
+      sysctl -w net.ipv6.conf.all.disable_ipv6=0 >/dev/null
+      sysctl -w net.ipv6.conf.default.disable_ipv6=0 >/dev/null
+    fi
     exit 1
   fi
   sleep 5
 done
+
+# Re-enable IPv6 if we disabled it
+if [ "$IPV6_WAS_DISABLED" = "0" ]; then
+  echo "Re-enabling IPv6..."
+  sysctl -w net.ipv6.conf.all.disable_ipv6=0 >/dev/null
+  sysctl -w net.ipv6.conf.default.disable_ipv6=0 >/dev/null
+fi
 
 echo
 echo "========================================"
