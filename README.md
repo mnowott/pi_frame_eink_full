@@ -676,7 +676,9 @@ Putting it all together:
 
 2. **Set up the Pi**
 
-   * Clone this repo on the Pi.
+   > **For a complete step-by-step guide, see [docs/pi-install-guide.md](docs/pi-install-guide.md).**
+
+   * Copy the repo to the Pi via `scp` (preferred) or clone it.
 
    * Run:
 
