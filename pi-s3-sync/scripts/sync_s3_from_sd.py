@@ -185,6 +185,11 @@ def ensure_wifi_connection(cfg: dict) -> int:
         debug("wifi_name or wifi_password not set; skipping Wi-Fi configuration.")
         return 0
 
+    # Validate SSID/password length (IEEE 802.11 limits)
+    if len(ssid) > 32 or len(password) > 63:
+        debug("SSID or password exceeds maximum length; skipping Wi-Fi configuration.")
+        return 0
+
     # Check if nmcli is available
     if shutil.which("nmcli") is None:
         debug(

@@ -1,6 +1,6 @@
 # B-004: Potential command injection in Wi-Fi connection
 
-Status: Open
+Status: Closed
 Last updated: 2026-03-07
 Severity: High
 
