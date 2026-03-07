@@ -6,7 +6,12 @@ from pathlib import Path
 import boto3
 import pytest
 
-from s3_manager.manager import S3Manager
+try:
+    from s3_manager.manager import S3Manager
+except ImportError:
+    S3Manager = None
+
+pytestmark = pytest.mark.skipif(S3Manager is None, reason="s3_manager package not installed")
 
 
 def test_check_connection_success(s3_manager: S3Manager) -> None:
