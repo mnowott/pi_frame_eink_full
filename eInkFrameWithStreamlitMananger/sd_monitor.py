@@ -2,12 +2,11 @@
 import os
 import sys
 import time
+import threading
 import subprocess
 import signal
 import json
 from datetime import datetime, time as dtime
-
-import gpiozero  # if unused you can remove this import
 
 # Fixed SD card mount path (from the systemd mount/udev setup)
 SD_PATH = "/mnt/epaper_sd"
@@ -17,6 +16,7 @@ PROCESSED_DIR_NAME = "_epaper_pic"
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 IMAGE_PROCESSING_SCRIPT = os.path.join(SCRIPT_DIR, "frame_manager.py")
+_process_lock = threading.Lock()
 process = None  # Holds the subprocess running frame_manager.py
 sd_was_removed = False  # Track if SD card was removed
 
@@ -154,41 +154,42 @@ def in_quiet_hours(now: datetime, evening: dtime, morning: dtime) -> bool:
 def start_frame_manager(sd_path, settings):
     """Start the image processing script as a separate process."""
     global process
-    if process is not None and process.poll() is None:
-        print("[sd_monitor] Stopping existing frame_manager process...")
-        process.send_signal(signal.SIGTERM)  # Gracefully terminate the process
-        process.wait()
-        print("[sd_monitor] Existing frame_manager process stopped.")
+    with _process_lock:
+        if process is not None and process.poll() is None:
+            print("[sd_monitor] Stopping existing frame_manager process...")
+            process.send_signal(signal.SIGTERM)
+            process.wait()
+            print("[sd_monitor] Existing frame_manager process stopped.")
 
-    # Compute refresh time
-    refresh_time_sec = get_refresh_time(sd_path, settings=settings)
+        refresh_time_sec = get_refresh_time(sd_path, settings=settings)
 
-    print(f"[sd_monitor] Starting frame_manager with path {sd_path} and refresh_time_sec={refresh_time_sec}...")
-    process = subprocess.Popen(
-        ["python3", IMAGE_PROCESSING_SCRIPT, sd_path, str(refresh_time_sec)],
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-        text=True,
-    )
-    print("[sd_monitor] frame_manager started.")
+        print(f"[sd_monitor] Starting frame_manager with path {sd_path} and refresh_time_sec={refresh_time_sec}...")
+        process = subprocess.Popen(
+            ["python3", IMAGE_PROCESSING_SCRIPT, sd_path, str(refresh_time_sec)],
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+            text=True,
+        )
+        print("[sd_monitor] frame_manager started.")
 
 
 def stop_frame_manager(reason: str = ""):
     """Stop the running frame_manager process, if any."""
     global process
-    if process is not None and process.poll() is None:
-        msg = (
-            f"[sd_monitor] Stopping frame_manager process. Reason: {reason}"
-            if reason
-            else "[sd_monitor] Stopping frame_manager process."
-        )
-        print(msg)
-        try:
-            process.send_signal(signal.SIGTERM)
-            process.wait()
-        except Exception as e:
-            print(f"[sd_monitor] Error stopping frame_manager: {e}")
-    process = None
+    with _process_lock:
+        if process is not None and process.poll() is None:
+            msg = (
+                f"[sd_monitor] Stopping frame_manager process. Reason: {reason}"
+                if reason
+                else "[sd_monitor] Stopping frame_manager process."
+            )
+            print(msg)
+            try:
+                process.send_signal(signal.SIGTERM)
+                process.wait()
+            except Exception as e:
+                print(f"[sd_monitor] Error stopping frame_manager: {e}")
+        process = None
 
 
 # ---------------------------------------------------------

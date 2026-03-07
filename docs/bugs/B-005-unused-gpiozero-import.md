@@ -1,6 +1,6 @@
 # B-005: Unused gpiozero import in sd_monitor.py
 
-Status: Open
+Status: Closed
 Last updated: 2026-03-07
 Severity: Low
 

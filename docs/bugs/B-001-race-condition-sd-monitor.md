@@ -1,6 +1,6 @@
 # B-001: Race condition in sd_monitor process management
 
-Status: Open
+Status: Closed
 Last updated: 2026-03-07
 Severity: Medium
 
