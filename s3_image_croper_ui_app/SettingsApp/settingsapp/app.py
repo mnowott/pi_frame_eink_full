@@ -239,7 +239,7 @@ def main():
             "picture_mode": picture_mode,
             "change_interval_minutes": int(change_interval_minutes),
             "stop_rotation_between": None,
-            "s3_folder": "s3_folder",  # always keep default for now
+            "s3_folder": settings.get("s3_folder", DEFAULT_SETTINGS["s3_folder"]),
         }
 
         if enable_quiet_hours and evening_time and morning_time:

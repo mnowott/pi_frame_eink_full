@@ -1,6 +1,6 @@
 # B-006: SettingsApp s3_folder input commented out, hardcoded default
 
-Status: Open
+Status: Closed
 Last updated: 2026-03-07
 Severity: Medium
 
