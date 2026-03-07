@@ -46,11 +46,19 @@ else
   echo "Note: You may need to log out / reboot or restart services for group changes to fully apply."
 fi
 
-echo "### 2e. Installing polkit rule to allow 'netdev' users to control NetworkManager"
+echo "### 2e. Installing polkit rule to allow 'netdev' users to manage Wi-Fi connections"
 sudo mkdir -p /etc/polkit-1/rules.d
 sudo tee /etc/polkit-1/rules.d/10-nmcli-netdev.rules >/dev/null <<'EOF'
+// Allow netdev group members to manage Wi-Fi connections only
+// (not all NetworkManager operations)
 polkit.addRule(function(action, subject) {
-    if (action.id.indexOf("org.freedesktop.NetworkManager.") == 0 &&
+    var allowed = [
+        "org.freedesktop.NetworkManager.wifi.scan",
+        "org.freedesktop.NetworkManager.network-control",
+        "org.freedesktop.NetworkManager.settings.modify.own",
+        "org.freedesktop.NetworkManager.settings.modify.system"
+    ];
+    if (allowed.indexOf(action.id) !== -1 &&
         subject.isInGroup("netdev")) {
         return polkit.Result.YES;
     }

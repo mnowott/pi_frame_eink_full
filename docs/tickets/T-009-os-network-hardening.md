@@ -1,6 +1,6 @@
 # T-009: OS and network hardening
 
-Status: Open
+Status: Closed
 Last updated: 2026-03-07
 
 ## Problem

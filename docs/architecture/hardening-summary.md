@@ -8,86 +8,51 @@ Last updated: 2026-03-07
 |-------|------|--------|
 | **Hardware watchdog** | Auto-reboots if system hangs | `dtparam=watchdog=on`, timeout=15s, max-load-1=24 |
 | **Volatile journald** | Logs to RAM only, no SD wear | `Storage=volatile`, 50MB cap, 3-day retention |
+| **Firewall (ufw)** | Deny incoming by default; SSH rate-limited; port 80 LAN-only | All RFC1918 ranges allowed for port 80 |
+| **SSH hardening** | Root login off, MaxAuthTries=3, keepalive | Password auth left enabled (manual disable after key setup) |
+| **Kernel params** | Disable SysRq, source routing, enable syncookies | `/etc/sysctl.d/99-epaper.conf` |
+| **Disable peripherals** | Bluetooth off, HDMI CEC off | `/boot/config.txt` overlays |
+| **Disable swap** | Reduce SD card wear | `dphys-swapfile uninstall` |
 | **OverlayFS root** | Root filesystem read-only; changes lost on reboot | `raspi-config nonint enable_overlayfs` |
 | **Shell notice** | Login warning explaining overlay behavior | Appended to `~/.bashrc` |
 
-## What's NOT Hardened (Gap Analysis)
-
-### Critical / High
-
-| Gap | Risk | Impact |
-|-----|------|--------|
-| **No firewall** | All ports open to LAN | Anyone on network can reach port 80 (SettingsApp), SSH, etc. |
-| **SettingsApp unauthenticated on 0.0.0.0:80** | No auth, no TLS | Anyone on LAN can change display settings, Wi-Fi config |
-| **Systemd services unsandboxed** | Full filesystem access | Compromised service can read/write anything as service user |
-| **SSH not hardened** | Default sshd config | Password auth likely enabled, root login possibly allowed |
-| **SD mount missing nosuid/noexec/nodev** | Code execution from removable media | Malicious SD card could run setuid binaries |
+## What's NOT Hardened (Remaining Gaps)
 
 ### Medium
 
 | Gap | Risk | Impact |
 |-----|------|--------|
-| **Swap not disabled** | SD card wear from swap writes | Reduces SD card lifespan |
-| **Kernel params not hardened** | Default sysctl values | IP redirects, source routing, and other network attacks possible |
-| **Polkit rule too broad** | All NM actions allowed for netdev group | Over-permissive NetworkManager access |
+| **SettingsApp unauthenticated on 0.0.0.0:80** | No auth, no TLS | Anyone on LAN can change display settings (mitigated by firewall LAN-only rule) |
 | **No automatic updates** | No unattended-upgrades | Security patches require manual overlay disable + reboot cycle |
-| **Bluetooth enabled** | Unnecessary attack surface | BT stack vulnerabilities exploitable on Pi Zero W/2W/3/4 |
+| **Password auth still enabled in SSH** | Brute-force risk | Manual step required after confirming key-based auth works |
 
 ### Low
 
 | Gap | Risk | Impact |
 |-----|------|--------|
 | **Serial console enabled** | Physical access attack vector | Attacker with UART can get shell |
-| **HDMI CEC enabled** | CEC device can send commands | Minor; mostly theoretical |
 
 ## Systemd Service Hardening Status
 
-| Service | NoNewPrivileges | ProtectSystem | PrivateTmp | Sandbox Score |
-|---------|:-:|:-:|:-:|:--|
-| `epaper.service` | - | - | - | **None** |
-| `sd-s3-sync.service` | - | - | - | **None** |
-| `settingsapp.service` | Yes | - | - | **Minimal** |
-| `imageuiapp.service` (EC2) | - | - | - | **None** |
+All services now have full baseline sandboxing (T-008 completed):
 
-Recommended baseline for all services:
-
-```ini
-NoNewPrivileges=true
-ProtectSystem=strict
-ProtectHome=true
-PrivateTmp=true
-ProtectKernelTunables=true
-ProtectKernelModules=true
-ProtectControlGroups=true
-RestrictNamespaces=true
-LockPersonality=true
-RestrictRealtime=true
-RestrictSUIDSGID=true
-```
-
-Additional per-service:
-- `epaper.service`: needs `ReadWritePaths=/mnt/epaper_sd` and SPI/I2C device access (`DeviceAllow=/dev/spidev* rw`, `/dev/gpiomem rw`)
-- `sd-s3-sync.service`: needs `ReadWritePaths=/mnt/epaper_sd` and network access
-- `settingsapp.service`: needs `ReadWritePaths=/mnt/epaper_sd` and `CAP_NET_BIND_SERVICE`
+| Service | NoNewPrivileges | ProtectSystem | PrivateTmp | ProtectHome | Extra |
+|---------|:-:|:-:|:-:|:-:|:--|
+| `epaper.service` | Yes | strict | Yes | read-only | SPI/GPIO DeviceAllow, ReadWritePaths=/mnt/epaper_sd |
+| `sd-s3-sync.service` | Yes | strict | Yes | read-only | PrivateDevices, ReadWritePaths=/mnt/epaper_sd |
+| `settingsapp.service` | Yes | strict | Yes | read-only | PrivateDevices, CAP_NET_BIND_SERVICE, ReadWritePaths for SD + config |
+| `imageuiapp.service` (EC2) | Yes | strict | Yes | read-only | PrivateDevices |
 
 ## SD Card Mount Security
 
-Current mount options:
-```
-defaults,uid=<user>,gid=<group>,umask=0022,nofail
-```
-
-Missing:
-```
-nosuid    — prevent setuid execution from removable media
-noexec    — prevent binary execution from SD card
-nodev     — prevent device file creation on SD card
-```
-
-Recommended:
+Mount options (updated in `install_sd_card_reader.sh`):
 ```
 defaults,uid=<user>,gid=<group>,umask=0022,nofail,nosuid,noexec,nodev
 ```
+
+- `nosuid` — prevent setuid execution from removable media
+- `noexec` — prevent binary execution from SD card
+- `nodev` — prevent device file creation on SD card
 
 ## Recommended Firewall Rules
 

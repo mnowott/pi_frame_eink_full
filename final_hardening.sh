@@ -95,7 +95,131 @@ echo "Journald log limits configured."
 echo
 
 # ---------------------------------------------------------
-# 3) Enable OverlayFS read-only root via raspi-config
+# 3) Firewall (ufw)
+# ---------------------------------------------------------
+echo "----------------------------------------"
+echo "▶ Configuring firewall (ufw)"
+echo "----------------------------------------"
+
+sudo apt-get install -y ufw
+
+# SAFETY: always allow SSH FIRST, before enabling the firewall
+sudo ufw limit 22/tcp comment "SSH rate-limited"
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow from 192.168.0.0/16 to any port 80 comment "SettingsApp LAN only"
+sudo ufw allow from 10.0.0.0/8 to any port 80 comment "SettingsApp LAN only (10.x)"
+sudo ufw allow from 172.16.0.0/12 to any port 80 comment "SettingsApp LAN only (172.x)"
+sudo ufw --force enable
+
+echo "Firewall configured. SSH always allowed."
+echo
+
+# ---------------------------------------------------------
+# 4) SSH hardening
+# ---------------------------------------------------------
+echo "----------------------------------------"
+echo "▶ Hardening SSH configuration"
+echo "----------------------------------------"
+
+SSH_CONF="/etc/ssh/sshd_config.d/99-epaper.conf"
+
+sudo tee "$SSH_CONF" >/dev/null <<'EOF'
+# ePaper frame SSH hardening
+# Applied by final_hardening.sh
+
+PermitRootLogin no
+PubkeyAuthentication yes
+PermitEmptyPasswords no
+X11Forwarding no
+AllowTcpForwarding no
+MaxAuthTries 3
+ClientAliveInterval 300
+ClientAliveCountMax 2
+
+# NOTE: PasswordAuthentication is intentionally left ENABLED here.
+# Disabling it before setting up key-based auth would lock you out!
+#
+# After confirming SSH key auth works, you can manually disable it:
+#   echo "PasswordAuthentication no" | sudo tee -a /etc/ssh/sshd_config.d/99-epaper.conf
+#   sudo systemctl reload sshd
+EOF
+
+echo "Reloading sshd..."
+sudo systemctl reload sshd || sudo systemctl reload ssh || true
+echo "SSH hardened (password auth still enabled for safety)."
+echo
+
+# ---------------------------------------------------------
+# 5) Kernel parameters (sysctl)
+# ---------------------------------------------------------
+echo "----------------------------------------"
+echo "▶ Applying kernel hardening parameters"
+echo "----------------------------------------"
+
+SYSCTL_CONF="/etc/sysctl.d/99-epaper.conf"
+
+sudo tee "$SYSCTL_CONF" >/dev/null <<'EOF'
+# ePaper frame kernel hardening
+kernel.sysrq = 0
+kernel.dmesg_restrict = 1
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.conf.all.log_martians = 1
+net.ipv4.tcp_syncookies = 1
+net.ipv4.conf.all.rp_filter = 1
+net.ipv6.conf.all.disable_ipv6 = 1
+EOF
+
+sudo sysctl --system >/dev/null 2>&1 || true
+echo "Kernel parameters applied."
+echo
+
+# ---------------------------------------------------------
+# 6) Disable unused peripherals
+# ---------------------------------------------------------
+echo "----------------------------------------"
+echo "▶ Disabling unused peripherals"
+echo "----------------------------------------"
+
+# Disable Bluetooth
+if ! grep -q '^dtoverlay=disable-bt' "$BOOT_CONFIG"; then
+  echo "dtoverlay=disable-bt" | sudo tee -a "$BOOT_CONFIG" >/dev/null
+  echo "Bluetooth disabled (takes effect after reboot)."
+else
+  echo "Bluetooth already disabled."
+fi
+
+# Disable HDMI CEC
+if ! grep -q '^hdmi_ignore_cec_init=1' "$BOOT_CONFIG"; then
+  echo "hdmi_ignore_cec_init=1" | sudo tee -a "$BOOT_CONFIG" >/dev/null
+  echo "HDMI CEC disabled."
+else
+  echo "HDMI CEC already disabled."
+fi
+
+echo
+
+# ---------------------------------------------------------
+# 7) Disable swap
+# ---------------------------------------------------------
+echo "----------------------------------------"
+echo "▶ Disabling swap"
+echo "----------------------------------------"
+
+if command -v dphys-swapfile >/dev/null 2>&1; then
+  sudo dphys-swapfile swapoff || true
+  sudo dphys-swapfile uninstall || true
+  sudo update-rc.d dphys-swapfile remove 2>/dev/null || true
+  echo "Swap disabled."
+else
+  echo "dphys-swapfile not found — swap may already be disabled."
+fi
+
+echo
+
+# ---------------------------------------------------------
+# 8) Enable OverlayFS read-only root via raspi-config
 # ---------------------------------------------------------
 echo "----------------------------------------"
 echo "▶ Enabling OverlayFS read-only root"
@@ -121,7 +245,7 @@ fi
 echo
 
 # ---------------------------------------------------------
-# 4) Add login notice to the target user's ~/.bashrc
+# 9) Add login notice to the target user's ~/.bashrc
 # ---------------------------------------------------------
 echo "----------------------------------------"
 echo "▶ Adding overlay warning to ${BASHRC}"
@@ -180,9 +304,18 @@ echo " Hardening completed."
 echo
 echo " * Hardware watchdog enabled (dtparam=watchdog=on, watchdog.service)."
 echo " * systemd-journald logs kept in RAM with size limits."
+echo " * Firewall enabled (SSH always allowed, port 80 LAN only)."
+echo " * SSH hardened (root login off, but password auth still enabled)."
+echo " * Kernel parameters hardened (sysctl)."
+echo " * Bluetooth and HDMI CEC disabled."
+echo " * Swap disabled."
 echo " * OverlayFS read-only root configured via raspi-config."
 echo " * A notice has been added to ${BASHRC} explaining how to"
 echo "   temporarily disable/enable OverlayFS for maintenance."
+echo
+echo "MANUAL STEP (after confirming SSH key auth works):"
+echo "  echo 'PasswordAuthentication no' | sudo tee -a /etc/ssh/sshd_config.d/99-epaper.conf"
+echo "  sudo systemctl reload sshd"
 echo
 echo "IMPORTANT: Reboot now so OverlayFS and watchdog changes take effect:"
 echo "  sudo reboot"

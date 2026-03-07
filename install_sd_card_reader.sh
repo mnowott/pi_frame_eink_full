@@ -106,7 +106,7 @@ Conflicts=umount.target
 What=/dev/disk/by-uuid/$UUID
 Where=$MOUNT_POINT
 Type=vfat
-Options=defaults,uid=$TARGET_UID,gid=$TARGET_GID,umask=0022,nofail
+Options=defaults,uid=$TARGET_UID,gid=$TARGET_GID,umask=0022,nofail,nosuid,noexec,nodev
 
 [Install]
 WantedBy=multi-user.target
