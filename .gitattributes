@@ -1,0 +1,16 @@
+# Default: treat text as text and normalize internally
+* text=auto
+
+# Always use LF for scripts and config we run on the Pi
+*.sh      text eol=lf
+*.bash    text eol=lf
+*.py      text eol=lf
+*.service text eol=lf
+*.timer   text eol=lf
+*.toml    text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+
+# Optional: explicit for common project files
+Dockerfile text eol=lf
+Makefile   text eol=lf

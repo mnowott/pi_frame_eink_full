@@ -1,0 +1,9 @@
+{
+  "aws_access_key_id": "AKIAEXAMPLE...",
+  "aws_secret_access_key": "your-secret-key-here",
+  "aws_region": "eu-central-1",
+  "s3_bucket": "your-bucket-name-here",
+
+  "wifi_name": "YourSSID",
+  "wifi_password": "YourWifiPassword"
+}

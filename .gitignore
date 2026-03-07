@@ -1,0 +1,16 @@
+# Secrets
+.env
+*.pem
+*.key
+wifi.json
+# Exception: wifi.json template served by ImageUiApp for user download
+!s3_image_croper_ui_app/ImageUiApp/imageuiapp/data/wifi.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Generated
+ALL_SCRIPTS.txt
