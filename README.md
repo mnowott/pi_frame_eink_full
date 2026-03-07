@@ -22,7 +22,7 @@ This repository contains all the pieces to do that.
 ```text
                    ┌───────────────────────────┐
                    │ ImageUiApp (Streamlit)    │
-                   │ - Crop images to 800x400  │
+                   │ - Crop images to 800x480  │
    Laptop / EC2 →  │ - Save crops to S3        │
                    └────────────┬──────────────┘
                                 │
@@ -84,7 +84,7 @@ At a high level:
 * **`s3_image_croper_ui_app/`**
   Two Streamlit apps:
 
-  * **ImageUiApp**: Local image cropper that writes final 800×400 images to S3.
+  * **ImageUiApp**: Local image cropper that writes final 800×480 images to S3.
   * **SettingsApp**: Web settings UI to control picture mode, interval, and quiet hours.
 
 * **`install_all_pi.sh` / `install_sd_card_reader.sh` / `install_env.sh` / `s3_image_croper_ui_app/install_*.sh`**
@@ -422,7 +422,7 @@ The goal here: **sync the S3 bucket down into a folder on the SD card**, typical
 The **ImageUiApp** is a Streamlit app to:
 
 1. Upload large photos.
-2. Interactively crop a fixed-size region (default 800×400).
+2. Interactively crop a fixed-size region (default 800×480).
 3. Save the cropped region as PNG to an S3 bucket.
 
 ### 3.1 Configuration
@@ -488,10 +488,10 @@ The **ImageUiApp** is a Streamlit app to:
 * Optional downscale:
 
   * If image is larger than `resize_max_dim`, scale it down while preserving aspect ratio,
-    but **never** to a size smaller than the desired crop (800×400).
+    but **never** to a size smaller than the desired crop (800×480).
 * Cropping:
 
-  * Fixed crop size (800×400 by default, clamped if image smaller).
+  * Fixed crop size (800×480 by default, clamped if image smaller).
   * Maintains crop position per image in `st.session_state`.
   * Four directional movement buttons + center button.
   * Shows both:
@@ -628,7 +628,7 @@ This script creates a “status card” image (Pollock-style background with cle
   * White rounded rectangle card in the center.
   * Centered multi-line text in a serif font.
 
-* Outputs a downscaled 800×400 PNG: `text.png`.
+* Outputs a downscaled 800×480 PNG: `text.png`.
 
 You can:
 
@@ -666,7 +666,7 @@ Putting it all together:
 1. **Prepare images & Wi-Fi config**
 
    * Run **ImageUiApp** (locally or on an EC2 instance).
-   * Upload and crop images → saved as 800×400 PNG into S3 bucket under `images/` (or the chosen prefix).
+   * Upload and crop images → saved as 800×480 PNG into S3 bucket under `images/` (or the chosen prefix).
    * From the **Downloads** tab, download `wifi.json` and fill in:
 
      * `wifi_name`, `wifi_password`

@@ -1,6 +1,6 @@
 # B-002: Image dimension mismatch in documentation
 
-Status: Open
+Status: Closed
 Last updated: 2026-03-07
 Severity: Low
 

@@ -1,6 +1,6 @@
 # Intro
 
-Diese App bereitet Bilder für deine **480×800 eInk-Bilderrahmen** vor, verwaltet sie
+Diese App bereitet Bilder für deine **800×480 eInk-Bilderrahmen** vor, verwaltet sie
 und synchronisiert sie mit den Rahmen auf dem Raspberry Pi.
 
 So stellst du sicher, dass **alle Bilder immer exakt zur Auflösung des Displays passen** 
