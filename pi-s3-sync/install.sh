@@ -36,13 +36,14 @@ echo "  3) Select: 'NetworkManager'"
 echo "  4) Reboot:  sudo reboot"
 echo "Do this ONLY when you have local access (HDMI/keyboard) in case networking breaks."
 
-echo "### 2d. Ensure user 'pi' is in group 'netdev' (for nmcli via polkit)"
-if id -nG pi | grep -qw netdev; then
-  echo "User 'pi' already in 'netdev' group."
+TARGET_USER=${SUDO_USER:-$(whoami)}
+echo "### 2d. Ensure user '$TARGET_USER' is in group 'netdev' (for nmcli via polkit)"
+if id -nG "$TARGET_USER" | grep -qw netdev; then
+  echo "User '$TARGET_USER' already in 'netdev' group."
 else
-  echo "Adding 'pi' to 'netdev' group..."
-  sudo usermod -aG netdev pi
-  echo "User 'pi' added to 'netdev'."
+  echo "Adding '$TARGET_USER' to 'netdev' group..."
+  sudo usermod -aG netdev "$TARGET_USER"
+  echo "User '$TARGET_USER' added to 'netdev'."
   echo "Note: You may need to log out / reboot or restart services for group changes to fully apply."
 fi
 
@@ -95,7 +96,7 @@ else
 fi
 
 echo "### 6. Install systemd service + timer"
-sudo cp systemd/sd-s3-sync.service /etc/systemd/system/sd-s3-sync.service
+sed "s/%EPAPER_USER%/$TARGET_USER/g" systemd/sd-s3-sync.service | sudo tee /etc/systemd/system/sd-s3-sync.service >/dev/null
 sudo cp systemd/sd-s3-sync.timer   /etc/systemd/system/sd-s3-sync.timer
 
 echo "### 7. Reload systemd, enable and start timer"
@@ -113,5 +114,5 @@ echo
 echo "If Wi-Fi control via nmcli fails with 'device not managed',"
 echo "run raspi-config as described above to switch to NetworkManager."
 echo
-echo "If you run the service as User=pi, the polkit rule + netdev group membership"
+echo "The service runs as User=$TARGET_USER. The polkit rule + netdev group membership"
 echo "should allow it to control Wi-Fi via nmcli without 'Not authorized' errors."

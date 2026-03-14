@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
 set -e
-echo 'export S3_BUCKET="your-s3-bucket-name"' >> "$HOME/.bashrc"
-echo 'REGION="eu-central-1"' >> "$HOME/.bashrc"
+# Load S3_BUCKET and REGION from the root .env file
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_ENV="${SCRIPT_DIR}/../.env"
+if [ -f "$ROOT_ENV" ]; then
+  set -a; source "$ROOT_ENV"; set +a
+else
+  echo "ERROR: .env not found at $ROOT_ENV"
+  echo "Copy .env.example to .env and fill in your values first."
+  exit 1
+fi
+echo "export S3_BUCKET=\"${S3_BUCKET}\"" >> "$HOME/.bashrc"
+echo "export REGION=\"${AWS_DEFAULT_REGION:-eu-central-1}\"" >> "$HOME/.bashrc"
 # 1) System packages (need sudo)
 sudo apt update
 sudo apt install -y python3 python3-pip python3-venv curl awscli

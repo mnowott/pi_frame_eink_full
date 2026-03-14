@@ -5,15 +5,25 @@ APP_USER="ec2-user"
 HOME_DIR="/home/${APP_USER}"
 
 ########################################
-# 0) Environment variables in .bashrc
+# 0) Environment variables from .env → .bashrc
 ########################################
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_ENV="${SCRIPT_DIR}/../.env"
+if [ -f "$ROOT_ENV" ]; then
+  set -a; source "$ROOT_ENV"; set +a
+else
+  echo "ERROR: .env not found at $ROOT_ENV"
+  echo "Copy .env.example to .env and fill in your values first."
+  exit 1
+fi
+
 if ! grep -q 'S3_BUCKET=' "${HOME_DIR}/.bashrc"; then
-  echo 'export S3_BUCKET="your-s3-bucket-name"' >> "${HOME_DIR}/.bashrc"
+  echo "export S3_BUCKET=\"${S3_BUCKET}\"" >> "${HOME_DIR}/.bashrc"
 fi
 
 if ! grep -q 'AWS_REGION=' "${HOME_DIR}/.bashrc"; then
-  echo 'export AWS_REGION="eu-central-1"' >> "${HOME_DIR}/.bashrc"
+  echo "export AWS_REGION=\"${AWS_DEFAULT_REGION:-eu-central-1}\"" >> "${HOME_DIR}/.bashrc"
 fi
 
 ########################################

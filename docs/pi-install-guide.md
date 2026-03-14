@@ -256,3 +256,177 @@ sudo systemctl restart mnt-epaper_sd.mount
 ```
 
 If no `/dev/sdX` appears, try a different USB port or card reader.
+
+## Moving an OS SD Card to Another Pi
+
+The OS SD card (the card the Pi boots from) can be moved to another identical Raspberry Pi, but certain configuration is tied to the original hardware. This section documents what breaks and how to fix it locally via SSH or keyboard/screen.
+
+### Pre-requisites
+
+- SSH access to the Pi, **or** a keyboard + HDMI/screen connected directly
+- If OverlayFS is enabled (it is after `final_hardening.sh`), you must disable it first — all changes to the root filesystem are lost on reboot otherwise
+
+### Step 0: Disable OverlayFS (if enabled)
+
+```bash
+# Check if OverlayFS is active
+mount | grep overlay
+
+# If yes, disable it and reboot
+sudo raspi-config nonint disable_overlayfs
+sudo reboot
+```
+
+After reboot, reconnect. The root filesystem is now writable.
+
+### Step 1: Fix the data SD card mount (most common issue)
+
+**Cause:** The systemd mount unit and udev rule reference the old data SD card by UUID. Every physical SD card has a unique UUID, so a different data SD card won't mount — even if it's the same model and size.
+
+**Diagnosis:**
+```bash
+# Check if the mount unit is failing
+sudo systemctl status mnt-epaper_sd.mount
+
+# See what UUID it expects
+grep 'What=' /etc/systemd/system/mnt-epaper_sd.mount
+# Output: What=/dev/disk/by-uuid/XXXX-XXXX   <-- old UUID
+
+# See what UUID the current data SD card actually has
+lsblk -f /dev/sd?*
+# Look for the vfat partition — its UUID will be different
+```
+
+**Fix — Option A: Re-label and switch to label-based mount (recommended)**
+
+This makes the mount hardware-agnostic going forward. Any SD card labelled `EPAPER_SD` will auto-mount.
+
+```bash
+# 1. Find the data SD card partition (typically /dev/sda1)
+lsblk -f /dev/sd?*
+
+# 2. Unmount it if mounted
+sudo umount /dev/sda1 2>/dev/null || true
+
+# 3. Install fatlabel if missing
+sudo apt-get install -y dosfstools
+
+# 4. Label the SD card
+sudo fatlabel /dev/sda1 EPAPER_SD
+
+# 5. Verify
+sudo blkid /dev/sda1
+# Should show: LABEL="EPAPER_SD"
+
+# 6. Update the systemd mount unit to use label instead of UUID
+sudo tee /etc/systemd/system/mnt-epaper_sd.mount > /dev/null <<'EOF'
+[Unit]
+Description=ePaper SD card mount
+DefaultDependencies=no
+After=local-fs-pre.target
+Before=local-fs.target
+Conflicts=umount.target
+
+[Mount]
+What=/dev/disk/by-label/EPAPER_SD
+Where=/mnt/epaper_sd
+Type=vfat
+Options=defaults,uid=1000,gid=1000,umask=0022,nofail,nosuid,noexec,nodev
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# 7. Update the udev rule
+sudo tee /etc/udev/rules.d/99-epaper-sd-mount.rules > /dev/null <<'EOF'
+ACTION=="add", SUBSYSTEM=="block", ENV{ID_FS_LABEL}=="EPAPER_SD", ENV{SYSTEMD_WANTS}="mnt-epaper_sd.mount"
+EOF
+
+# 8. Reload and test
+sudo systemctl daemon-reload
+sudo udevadm control --reload-rules
+sudo systemctl restart mnt-epaper_sd.mount
+mountpoint /mnt/epaper_sd && echo "OK: mounted" || echo "FAIL: not mounted"
+```
+
+> **Note:** The `uid=1000,gid=1000` in the mount options corresponds to the default first user. Check your UID with `id -u` and adjust if different.
+
+**Fix — Option B: Update UUID only (quick, but still hardware-specific)**
+
+```bash
+# 1. Get the new SD card's UUID
+NEW_UUID=$(sudo blkid -s UUID -o value /dev/sda1)
+echo "New UUID: $NEW_UUID"
+
+# 2. Replace the old UUID in the mount unit
+sudo sed -i "s|What=/dev/disk/by-uuid/.*|What=/dev/disk/by-uuid/$NEW_UUID|" \
+  /etc/systemd/system/mnt-epaper_sd.mount
+
+# 3. Replace the old UUID in the udev rule
+sudo sed -i "s|ID_FS_UUID==\"[^\"]*\"|ID_FS_UUID==\"$NEW_UUID\"|" \
+  /etc/udev/rules.d/99-epaper-sd-mount.rules
+
+# 4. Reload and test
+sudo systemctl daemon-reload
+sudo udevadm control --reload-rules
+sudo systemctl restart mnt-epaper_sd.mount
+mountpoint /mnt/epaper_sd && echo "OK: mounted" || echo "FAIL: not mounted"
+```
+
+### Step 2: Fix username mismatches (if applicable)
+
+If the new Pi has a different username than the one used during install (e.g. the original was `pi` but the new Pi uses `admin`), services will fail with "User does not exist".
+
+**Diagnosis:**
+```bash
+# Check which user the services expect
+grep '^User=' /etc/systemd/system/epaper.service
+grep '^User=' /etc/systemd/system/sd-s3-sync.service
+grep '^User=' /etc/systemd/system/settingsapp.service
+```
+
+**Fix:**
+```bash
+# Replace the old username with the current one in all service files
+OLD_USER="pi"          # <-- the user from the original Pi
+NEW_USER="$(whoami)"   # <-- the current user
+
+sudo sed -i "s/User=$OLD_USER/User=$NEW_USER/g; s/Group=$OLD_USER/Group=$NEW_USER/g" \
+  /etc/systemd/system/epaper.service \
+  /etc/systemd/system/sd-s3-sync.service \
+  /etc/systemd/system/settingsapp.service
+
+# Also fix home directory paths in the service files
+OLD_HOME="/home/$OLD_USER"
+NEW_HOME="/home/$NEW_USER"
+
+sudo sed -i "s|$OLD_HOME|$NEW_HOME|g" \
+  /etc/systemd/system/epaper.service \
+  /etc/systemd/system/settingsapp.service
+
+sudo systemctl daemon-reload
+sudo systemctl restart epaper.service settingsapp.service
+```
+
+### Step 3: Set the hostname
+
+```bash
+sudo hostnamectl set-hostname <your-new-device-name>
+```
+
+The ePaper status screen shows `http://<hostname>/` — this updates it on next display refresh.
+
+### Step 4: Re-enable OverlayFS
+
+After confirming everything works:
+
+```bash
+# Verify all services
+sudo systemctl status epaper.service settingsapp.service
+sudo systemctl list-timers sd-s3-sync.timer
+mountpoint /mnt/epaper_sd && echo "SD: OK"
+
+# Re-enable read-only root
+sudo raspi-config nonint enable_overlayfs
+sudo reboot
+```

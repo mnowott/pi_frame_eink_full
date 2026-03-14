@@ -1,14 +1,21 @@
 #!/bin/bash
 set -e
 
+# Choose correct boot config path (Raspberry Pi OS variants)
+BOOT_CONFIG="/boot/config.txt"
+if [ -f /boot/firmware/config.txt ]; then
+  BOOT_CONFIG="/boot/firmware/config.txt"
+fi
+echo "Using boot config: ${BOOT_CONFIG}"
+
 echo "Enabling SPI interface..."
-sudo sed -i 's/^dtparam=spi=.*/dtparam=spi=on/' /boot/config.txt
-sudo sed -i 's/^#dtparam=spi=.*/dtparam=spi=on/' /boot/config.txt
+sudo sed -i 's/^dtparam=spi=.*/dtparam=spi=on/' "$BOOT_CONFIG"
+sudo sed -i 's/^#dtparam=spi=.*/dtparam=spi=on/' "$BOOT_CONFIG"
 sudo raspi-config nonint do_spi 0
 
 echo "Enabling I2C interface..."
-sudo sed -i 's/^dtparam=i2c_arm=.*/dtparam=i2c_arm=on/' /boot/config.txt
-sudo sed -i 's/^#dtparam=i2c_arm=.*/dtparam=i2c_arm=on/' /boot/config.txt
+sudo sed -i 's/^dtparam=i2c_arm=.*/dtparam=i2c_arm=on/' "$BOOT_CONFIG"
+sudo sed -i 's/^#dtparam=i2c_arm=.*/dtparam=i2c_arm=on/' "$BOOT_CONFIG"
 sudo raspi-config nonint do_i2c 0
 
 echo "Installing Python dependencies for ePaper display..."
@@ -82,12 +89,13 @@ LockPersonality=true
 RestrictRealtime=true
 RestrictSUIDSGID=true
 
-# ePaper hardware access (SPI, GPIO, gpiochip for modern kernels)
+# ePaper hardware access (SPI, GPIO)
+# Use device class wildcards so the service works across Pi models
+# (different models expose different gpiochip numbers)
+DeviceAllow=char-gpiochip rw
 DeviceAllow=/dev/spidev0.0 rw
 DeviceAllow=/dev/spidev0.1 rw
 DeviceAllow=/dev/gpiomem rw
-DeviceAllow=/dev/gpiochip0 rw
-DeviceAllow=/dev/gpiochip4 rw
 SupplementaryGroups=spi i2c gpio
 
 # SD card read/write

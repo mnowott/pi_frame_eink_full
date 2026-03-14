@@ -1,6 +1,6 @@
 # Tickets
 
-Last updated: 2026-03-07
+Last updated: 2026-03-14
 
 ## All Tickets
 
@@ -16,3 +16,4 @@ Last updated: 2026-03-07
 | [T-008](T-008-systemd-sandboxing.md) | Add systemd sandboxing to all services | Closed | 2026-03-07 |
 | [T-009](T-009-os-network-hardening.md) | OS and network hardening (firewall, SSH, sysctl, peripherals) | Closed | 2026-03-07 |
 | [T-010](T-010-pi-install-guide.md) | Fresh Pi install guide (step-by-step runbook) | Closed | 2026-03-07 |
+| [T-011](T-011-os-card-portability.md) | OS SD card not portable between identical Pi hardware | Closed | 2026-03-14 |

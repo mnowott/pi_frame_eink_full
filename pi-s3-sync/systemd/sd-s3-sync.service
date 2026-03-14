@@ -6,8 +6,8 @@ Wants=network-online.target
 [Service]
 EnvironmentFile=/etc/epaper-settings/s3-sync.env
 Type=oneshot
-User=pi
-Group=pi
+User=%EPAPER_USER%
+Group=%EPAPER_USER%
 ExecStart=/usr/local/bin/sync_s3_from_sd.py
 
 # --- Sandboxing ---

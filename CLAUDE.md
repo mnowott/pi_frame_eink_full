@@ -116,12 +116,13 @@ When modifying code, check `docs/tickets/` and `docs/bugs/` for related items. U
 
 Tracked in detail in [docs/tickets/](docs/tickets/index.md) and [docs/bugs/](docs/bugs/index.md).
 
-All original tickets (T-001 through T-009) and bugs (B-001 through B-006) have been **resolved and closed**.
+All tickets (T-001 through T-011) and bugs (B-001 through B-006) have been **resolved and closed**.
 
 Remaining items:
 
 | ID | Issue | Status |
 |----|-------|--------|
 | T-010 | Fresh Pi install guide (step-by-step runbook) | Closed |
+| T-011 | OS SD card portability between identical Pi hardware | Closed |
 | — | SSH `PasswordAuthentication no` must be set manually after key auth confirmed | Manual step |
 | — | SettingsApp has no authentication (mitigated by LAN-only firewall rule) | Accepted risk |

@@ -5,6 +5,7 @@ echo "=== ePaper SD card systemd mount installer ==="
 
 # ----- Config -----
 MOUNT_POINT="/mnt/epaper_sd"
+SD_LABEL="EPAPER_SD"
 
 # Determine the "real" user (not root when using sudo)
 TARGET_USER=${SUDO_USER:-$(whoami)}
@@ -13,6 +14,7 @@ TARGET_GID=$(id -g "$TARGET_USER")
 
 echo "Using user: $TARGET_USER (uid=$TARGET_UID, gid=$TARGET_GID)"
 echo "Mount point: $MOUNT_POINT"
+echo "Expected filesystem label: $SD_LABEL"
 echo
 
 echo "STEP 1: Detecting vfat *data* partition on /dev/sdX..."
@@ -65,16 +67,23 @@ fi
 echo "Detected data partition: $CANDIDATE"
 echo
 
-echo "STEP 2: Getting UUID for $CANDIDATE..."
-UUID=$(blkid -s UUID -o value "$CANDIDATE" || true)
+echo "STEP 2: Labelling $CANDIDATE as '$SD_LABEL'..."
 
-if [ -z "$UUID" ]; then
-    echo "ERROR: Could not determine UUID for $CANDIDATE."
-    echo "Run: sudo blkid $CANDIDATE   to inspect manually."
-    exit 1
+# Read current label
+CURRENT_LABEL=$(blkid -s LABEL -o value "$CANDIDATE" 2>/dev/null || true)
+
+if [ "$CURRENT_LABEL" = "$SD_LABEL" ]; then
+    echo "Partition already labelled '$SD_LABEL'."
+else
+    # Unmount first — fatlabel cannot operate on a mounted filesystem
+    sudo umount "$CANDIDATE" 2>/dev/null || true
+    if ! command -v fatlabel >/dev/null 2>&1; then
+        echo "Installing dosfstools (provides fatlabel)..."
+        sudo apt-get update -qq && sudo apt-get install -y dosfstools
+    fi
+    sudo fatlabel "$CANDIDATE" "$SD_LABEL"
+    echo "Partition labelled '$SD_LABEL' (was: '${CURRENT_LABEL:-<none>}')."
 fi
-
-echo "Partition UUID: $UUID"
 echo
 
 echo "STEP 3: Preparing mount point directory..."
@@ -103,7 +112,7 @@ Before=local-fs.target
 Conflicts=umount.target
 
 [Mount]
-What=/dev/disk/by-uuid/$UUID
+What=/dev/disk/by-label/$SD_LABEL
 Where=$MOUNT_POINT
 Type=vfat
 Options=defaults,uid=$TARGET_UID,gid=$TARGET_GID,umask=0022,nofail,nosuid,noexec,nodev
@@ -122,8 +131,9 @@ UDEV_RULE_PATH="/etc/udev/rules.d/99-epaper-sd-mount.rules"
 echo "STEP 5: Writing udev rule: $UDEV_RULE_PATH"
 
 sudo tee "$UDEV_RULE_PATH" > /dev/null <<EOF
-# Auto-start systemd mount for ePaper SD card when the device with this UUID appears
-ACTION=="add", SUBSYSTEM=="block", ENV{ID_FS_UUID}=="$UUID", ENV{SYSTEMD_WANTS}="$MOUNT_UNIT_NAME"
+# Auto-start systemd mount for ePaper SD card when a device labelled $SD_LABEL appears.
+# This is hardware-agnostic — any SD card with the right label will mount.
+ACTION=="add", SUBSYSTEM=="block", ENV{ID_FS_LABEL}=="$SD_LABEL", ENV{SYSTEMD_WANTS}="$MOUNT_UNIT_NAME"
 EOF
 
 echo "Udev rule created."
@@ -150,10 +160,12 @@ echo
 echo "Done."
 
 echo "Behavior summary:"
-echo "  - On boot: systemd will try to mount the SD (UUID $UUID) at $MOUNT_POINT."
+echo "  - On boot: systemd will mount any vfat device labelled '$SD_LABEL' at $MOUNT_POINT."
 echo "  - If you unplug and later re-plug the SD card:"
-echo "      * udev will notice the device with that UUID"
+echo "      * udev will notice the device with label '$SD_LABEL'"
 echo "      * and ask systemd to start $MOUNT_UNIT_NAME again."
+echo "  - To use a NEW data SD card, label it first:"
+echo "      sudo fatlabel /dev/sdX1 $SD_LABEL"
 echo
 echo "To inspect status:"
 echo "  systemctl status $MOUNT_UNIT_NAME"
