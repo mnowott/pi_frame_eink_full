@@ -300,27 +300,39 @@ lsblk -f /dev/sd?*
 
 **Fix — Option A: Re-label and switch to label-based mount (recommended)**
 
-This makes the mount hardware-agnostic going forward. Any SD card labelled `EPAPER_SD` will auto-mount.
+This makes the mount hardware-agnostic going forward. Any SD card labelled `EPAPER_SD` will auto-mount. The script auto-detects the SD card partition — just copy-paste the whole block:
 
 ```bash
-# 1. Find the data SD card partition (typically /dev/sda1)
-lsblk -f /dev/sd?*
+# Auto-detect the data SD card, re-label it, and switch to label-based mounting.
+# Copy-paste this entire block — no manual edits needed.
+set -e
+SD_LABEL="EPAPER_SD"
+MY_UID=$(id -u)
+MY_GID=$(id -g)
 
-# 2. Unmount it if mounted
-sudo umount /dev/sda1 2>/dev/null || true
+# Find the first non-boot vfat partition on /dev/sdX
+DEV=""
+for d in $(lsblk -prno NAME,FSTYPE /dev/sd?* 2>/dev/null | awk '$2=="vfat"{print $1}'); do
+  LABEL=$(blkid -s LABEL -o value "$d" 2>/dev/null || true)
+  [[ "$LABEL" == "boot" || "$LABEL" == "bootfs" ]] && continue
+  DEV="$d"; break
+done
 
-# 3. Install fatlabel if missing
-sudo apt-get install -y dosfstools
+if [ -z "$DEV" ]; then
+  echo "ERROR: No suitable vfat partition found on /dev/sdX."
+  echo "Run 'lsblk -f' and check which device is your data SD card."
+  exit 1
+fi
+echo "Detected data SD partition: $DEV"
 
-# 4. Label the SD card
-sudo fatlabel /dev/sda1 EPAPER_SD
+# Unmount if mounted, install fatlabel if missing, label the partition
+sudo umount "$DEV" 2>/dev/null || true
+command -v fatlabel >/dev/null || sudo apt-get install -y dosfstools
+sudo fatlabel "$DEV" "$SD_LABEL"
+echo "Labelled $DEV as $SD_LABEL"
 
-# 5. Verify
-sudo blkid /dev/sda1
-# Should show: LABEL="EPAPER_SD"
-
-# 6. Update the systemd mount unit to use label instead of UUID
-sudo tee /etc/systemd/system/mnt-epaper_sd.mount > /dev/null <<'EOF'
+# Write label-based systemd mount unit
+sudo tee /etc/systemd/system/mnt-epaper_sd.mount > /dev/null <<EOF
 [Unit]
 Description=ePaper SD card mount
 DefaultDependencies=no
@@ -329,45 +341,52 @@ Before=local-fs.target
 Conflicts=umount.target
 
 [Mount]
-What=/dev/disk/by-label/EPAPER_SD
+What=/dev/disk/by-label/$SD_LABEL
 Where=/mnt/epaper_sd
 Type=vfat
-Options=defaults,uid=1000,gid=1000,umask=0022,nofail,nosuid,noexec,nodev
+Options=defaults,uid=$MY_UID,gid=$MY_GID,umask=0022,nofail,nosuid,noexec,nodev
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# 7. Update the udev rule
-sudo tee /etc/udev/rules.d/99-epaper-sd-mount.rules > /dev/null <<'EOF'
-ACTION=="add", SUBSYSTEM=="block", ENV{ID_FS_LABEL}=="EPAPER_SD", ENV{SYSTEMD_WANTS}="mnt-epaper_sd.mount"
+# Write label-based udev rule
+sudo tee /etc/udev/rules.d/99-epaper-sd-mount.rules > /dev/null <<EOF
+ACTION=="add", SUBSYSTEM=="block", ENV{ID_FS_LABEL}=="$SD_LABEL", ENV{SYSTEMD_WANTS}="mnt-epaper_sd.mount"
 EOF
 
-# 8. Reload and test
+# Reload and test
 sudo systemctl daemon-reload
 sudo udevadm control --reload-rules
 sudo systemctl restart mnt-epaper_sd.mount
-mountpoint /mnt/epaper_sd && echo "OK: mounted" || echo "FAIL: not mounted"
+mountpoint /mnt/epaper_sd && echo "OK: mounted at /mnt/epaper_sd" || echo "FAIL: not mounted"
 ```
-
-> **Note:** The `uid=1000,gid=1000` in the mount options corresponds to the default first user. Check your UID with `id -u` and adjust if different.
 
 **Fix — Option B: Update UUID only (quick, but still hardware-specific)**
 
-```bash
-# 1. Get the new SD card's UUID
-NEW_UUID=$(sudo blkid -s UUID -o value /dev/sda1)
-echo "New UUID: $NEW_UUID"
+This also auto-detects the partition — no need to know the device name:
 
-# 2. Replace the old UUID in the mount unit
+```bash
+# Auto-detect the data SD card and update the mount unit/udev rule with its UUID.
+set -e
+DEV=""
+for d in $(lsblk -prno NAME,FSTYPE /dev/sd?* 2>/dev/null | awk '$2=="vfat"{print $1}'); do
+  LABEL=$(blkid -s LABEL -o value "$d" 2>/dev/null || true)
+  [[ "$LABEL" == "boot" || "$LABEL" == "bootfs" ]] && continue
+  DEV="$d"; break
+done
+[ -z "$DEV" ] && echo "ERROR: No data SD card found. Run 'lsblk -f' to check." && exit 1
+
+NEW_UUID=$(sudo blkid -s UUID -o value "$DEV")
+echo "Detected $DEV with UUID: $NEW_UUID"
+
+# Replace UUID in mount unit and udev rule
 sudo sed -i "s|What=/dev/disk/by-uuid/.*|What=/dev/disk/by-uuid/$NEW_UUID|" \
   /etc/systemd/system/mnt-epaper_sd.mount
-
-# 3. Replace the old UUID in the udev rule
 sudo sed -i "s|ID_FS_UUID==\"[^\"]*\"|ID_FS_UUID==\"$NEW_UUID\"|" \
   /etc/udev/rules.d/99-epaper-sd-mount.rules
 
-# 4. Reload and test
+# Reload and test
 sudo systemctl daemon-reload
 sudo udevadm control --reload-rules
 sudo systemctl restart mnt-epaper_sd.mount
