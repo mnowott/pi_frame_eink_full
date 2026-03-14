@@ -87,6 +87,9 @@ After every code change:
 2. **Review documentation for accuracy** — check that `docs/`, `CLAUDE.md`, and module READMEs still reflect the current state. Update any affected docs (architecture, services, settings, data flow). Update `Last updated` dates on changed docs.
 3. **Update tickets/bugs** — if your change resolves a ticket or bug, update its status to Closed. If it introduces new issues, create new entries.
 
+After every major update (multi-file changes, new features, install flow changes, refactors):
+4. **Run a full audit** using the template at `docs/audits/_TEMPLATE.md`. Create a new audit file (`AUD_NNN_short_title.md`), work through every checklist item, document findings, fix issues found, and update `docs/audits/INDEX.md`. This catches documentation drift, stale tickets, security regressions, and portability issues before they accumulate.
+
 ## Security Rules
 
 - **Never commit secrets.** AWS keys, Wi-Fi passwords, and `.pem` files must stay out of git.
