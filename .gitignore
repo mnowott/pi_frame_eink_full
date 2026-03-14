@@ -12,5 +12,8 @@ __pycache__/
 *.pyo
 .pytest_cache/
 
+# IDE / tooling
+.claude/
+
 # Generated
 ALL_SCRIPTS.txt
