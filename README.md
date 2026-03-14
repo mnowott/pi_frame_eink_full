@@ -4,9 +4,9 @@
     │  │                           │  │
     │  │    ePaper Family Frame    │  │
     │  │                           │  │
-    │  │   ┌───┐  ┌───┐  ┌───┐   │  │
-    │  │   │ 🌄│  │ 🏖│  │ 🎄│   │  │
-    │  │   └───┘  └───┘  └───┘   │  │
+    │  │   ┌───┐  ┌───┐  ┌───┐     │  │
+    │  │   │:=)│  │:=)│  │:=)│     │  │
+    │  │   └───┘  └───┘  └───┘     │  │
     │  │                           │  │
     │  └───────────────────────────┘  │
     │          ▓▓▓▓▓▓▓▓▓▓▓            │
@@ -17,7 +17,9 @@
 
 A complete system for turning a **Raspberry Pi** and a **Waveshare 7-color ePaper display** into a beautiful family photo frame — with cloud sync, a web cropping tool, and a settings UI.
 
-Upload photos from any browser, crop them to fit, sync via S3, and watch them rotate on the display. No terminal needed after setup.
+Upload photos from any browser, crop them to fit, sync between frames via S3, and watch them rotate on the display. No terminal needed after setup.
+
+> Built on top of [eInkFrame](https://github.com/EnriqueNeyra/eInkFrame) by Enrique Neyra, which provided the original display driver concept and Waveshare ePaper integration. This project extends the original with cloud sync, web management UIs, automated installation, and production hardening.
 
 ## Features
 

@@ -265,6 +265,7 @@ The OS SD card (the card the Pi boots from) can be moved to another identical Ra
 
 - SSH access to the Pi, **or** a keyboard + HDMI/screen connected directly
 - If OverlayFS is enabled (it is after `final_hardening.sh`), you must disable it first — all changes to the root filesystem are lost on reboot otherwise
+- DO NOT FORGET TO ENABLE THE OVERLAY AGAIN AFTER (Step 4)
 
 ### Step 0: Disable OverlayFS (if enabled)
 
