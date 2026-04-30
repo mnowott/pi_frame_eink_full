@@ -11,7 +11,7 @@ resource "aws_security_group" "imageuiapp" {
   }
 
   ingress {
-    description = "HTTP for Caddy LE HTTP-01 + HTTP->HTTPS redirect"
+    description = "HTTP for Caddy LE HTTP-01 and HTTP-to-HTTPS redirect"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -27,7 +27,7 @@ resource "aws_security_group" "imageuiapp" {
   }
 
   egress {
-    description = "All outbound (S3, package mirrors, Entra IdP, Let's Encrypt)"
+    description = "All outbound (S3, package mirrors, Entra IdP, ACME)"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
