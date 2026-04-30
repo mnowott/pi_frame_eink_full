@@ -5,7 +5,8 @@ Helpers for AWS-side operations.
 | Script | Purpose | How to invoke |
 |--------|---------|---------------|
 | `backup_s3.sh` | Snapshot the family-photos S3 bucket to a local directory. Run before any risky infra change. | `bash scripts/aws/backup_s3.sh` |
-| `assume_admin.sh` | Assume the `imageuiapp-admin` role via STS (SSO or MFA), export short-lived creds into the current shell. | **`source scripts/aws/assume_admin.sh`** (must be sourced) |
+| `assume_admin.sh` | Assume the `imageuiapp-admin` role via STS (MFA default, SSO fallback), export short-lived creds, cache them at `~/.cache/imageuiapp-admin/creds.env`. | **`source scripts/aws/assume_admin.sh`** (must be sourced). Non-interactive: `MFA_CODE=123456 source scripts/aws/assume_admin.sh`. |
+| `with_admin_role.sh` | Run a single command under admin-role STS creds. Reuses the cache from `assume_admin.sh`; falls back to the assume flow if the cache is missing or near-expiry. | `bash scripts/aws/with_admin_role.sh <cmd> [args...]`. Non-interactive: `MFA_CODE=123456 bash scripts/aws/with_admin_role.sh <cmd>`. |
 
 ## Why these scripts
 
