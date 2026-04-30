@@ -8,18 +8,19 @@
 #
 #     source scripts/aws/assume_admin.sh
 #
-# Two flows are supported, auto-detected from .env:
+# Two flows are supported, auto-detected from .env. MFA is the default;
+# SSO is used only if AWS_MFA_SERIAL is unset and AWS_SSO_PROFILE is set.
 #
-#   1. SSO (preferred). Set in .env:
+#   1. MFA (default). Set in .env:
+#        AWS_MFA_SERIAL=arn:aws:iam::<acct>:mfa/<device-name>
+#      The script prompts for the current 6-digit TOTP code from your
+#      authenticator app and calls aws sts assume-role with that code.
+#
+#   2. SSO (fallback). Set in .env when you do NOT have AWS_MFA_SERIAL:
 #        AWS_SSO_PROFILE=<aws cli profile configured for SSO>
 #      The script runs `aws sso login --profile $AWS_SSO_PROFILE`, which
 #      opens a browser. After you confirm, it does `aws sts assume-role`
 #      using that profile as the source.
-#
-#   2. MFA. Set in .env:
-#        AWS_MFA_SERIAL=arn:aws:iam::<acct>:mfa/<device-name>
-#      The script prompts for the current 6-digit TOTP code from your
-#      authenticator app.
 #
 # In both cases, .env must also contain:
 #   AWS_ADMIN_ROLE_ARN   ARN of the imageuiapp-admin role (CFN output)
@@ -71,21 +72,8 @@ _assume_admin_main() {
   # Clear any previously-assumed creds so the source-call is unambiguous.
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_SESSION_EXPIRATION
 
-  if [ -n "${AWS_SSO_PROFILE:-}" ]; then
-    echo "==> SSO path. Profile: ${AWS_SSO_PROFILE}"
-    echo "==> Running 'aws sso login' (browser will open)..."
-    if ! aws sso login --profile "${AWS_SSO_PROFILE}"; then
-      _assume_admin_fail "aws sso login failed"
-      return $?
-    fi
-    creds_json="$(aws sts assume-role \
-      --profile "${AWS_SSO_PROFILE}" \
-      --role-arn "${AWS_ADMIN_ROLE_ARN}" \
-      --role-session-name "${session_name}" \
-      --region "${region}" \
-      --output json 2>&1)"
-  elif [ -n "${AWS_MFA_SERIAL:-}" ]; then
-    echo "==> MFA path. Device: ${AWS_MFA_SERIAL}"
+  if [ -n "${AWS_MFA_SERIAL:-}" ]; then
+    echo "==> MFA path (default). Device: ${AWS_MFA_SERIAL}"
     local mfa_code
     read -r -p "Enter 6-digit MFA code: " mfa_code
     if ! [[ "${mfa_code}" =~ ^[0-9]{6}$ ]]; then
@@ -99,8 +87,21 @@ _assume_admin_main() {
       --token-code "${mfa_code}" \
       --region "${region}" \
       --output json 2>&1)"
+  elif [ -n "${AWS_SSO_PROFILE:-}" ]; then
+    echo "==> SSO fallback. Profile: ${AWS_SSO_PROFILE}"
+    echo "==> Running 'aws sso login' (browser will open)..."
+    if ! aws sso login --profile "${AWS_SSO_PROFILE}"; then
+      _assume_admin_fail "aws sso login failed"
+      return $?
+    fi
+    creds_json="$(aws sts assume-role \
+      --profile "${AWS_SSO_PROFILE}" \
+      --role-arn "${AWS_ADMIN_ROLE_ARN}" \
+      --role-session-name "${session_name}" \
+      --region "${region}" \
+      --output json 2>&1)"
   else
-    _assume_admin_fail "Neither AWS_SSO_PROFILE nor AWS_MFA_SERIAL is set in .env. Set one of them."
+    _assume_admin_fail "Neither AWS_MFA_SERIAL nor AWS_SSO_PROFILE is set in .env. Set AWS_MFA_SERIAL (default path)."
     return $?
   fi
 

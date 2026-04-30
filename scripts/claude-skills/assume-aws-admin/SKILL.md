@@ -8,8 +8,8 @@ description: |
   that returns "AccessDenied" / "UnauthorizedOperation", or upfront when
   the user requests EC2/IAM/Route53/CloudFormation/Terraform actions in
   this repo. The skill sources `scripts/aws/assume_admin.sh` to obtain
-  short-lived STS credentials for the imageuiapp-admin role (MFA or SSO,
-  whichever is configured in .env).
+  short-lived STS credentials for the imageuiapp-admin role. Default path
+  is MFA (AWS_MFA_SERIAL); SSO (AWS_SSO_PROFILE) is fallback only.
 ---
 
 # Skill: assume-aws-admin
@@ -48,7 +48,8 @@ Before this skill works, the user must have:
    (creates the `imageuiapp-admin` role).
 2. Filled in `.env` at the repo root with at least:
    * `AWS_ADMIN_ROLE_ARN`
-   * One of `AWS_SSO_PROFILE` or `AWS_MFA_SERIAL`
+   * `AWS_MFA_SERIAL` (default path) — or `AWS_SSO_PROFILE` as a fallback
+     when MFA is not available
 3. Have `jq` and the AWS CLI v2 on `$PATH`.
 
 If the user has not done these, do not silently fail. Ask them to run the

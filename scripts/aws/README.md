@@ -25,8 +25,9 @@ S3_BUCKET=...                     # backup_s3.sh
 AWS_DEFAULT_REGION=...            # both
 AWS_ADMIN_ROLE_ARN=arn:aws:iam::<acct>:role/imageuiapp-admin   # assume_admin.sh
 
-# Pick ONE auth path:
-AWS_SSO_PROFILE=<aws-cli-profile-name>          # if you use AWS SSO / Identity Center
-# OR
-AWS_MFA_SERIAL=arn:aws:iam::<acct>:mfa/<device-name>   # if you use a virtual MFA device
+# Default auth path: MFA. Set AWS_MFA_SERIAL.
+AWS_MFA_SERIAL=arn:aws:iam::<acct>:mfa/<device-name>
+
+# Fallback only (used only if AWS_MFA_SERIAL is unset).
+# AWS_SSO_PROFILE=<aws-cli-profile-name>
 ```
