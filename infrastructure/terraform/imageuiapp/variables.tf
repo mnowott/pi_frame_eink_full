@@ -42,9 +42,14 @@ variable "ec2_ssh_key_name" {
 }
 
 variable "ebs_size_gb" {
-  description = "Root EBS volume size in GiB."
+  description = "Root EBS volume size in GiB. Minimum 30 for the Amazon Linux 2023 ARM AMI snapshot."
   type        = number
-  default     = 8
+  default     = 30
+
+  validation {
+    condition     = var.ebs_size_gb >= 30
+    error_message = "ebs_size_gb must be >= 30 (Amazon Linux 2023 ARM snapshot floor)."
+  }
 }
 
 variable "tags" {

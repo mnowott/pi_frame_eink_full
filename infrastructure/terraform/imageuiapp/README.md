@@ -70,7 +70,7 @@ DynamoDB remote backend in a follow-up. The state file is gitignored.
 | Resource | $/mo |
 |----------|------|
 | EC2 t4g.micro on-demand | ~$6 |
-| EBS 8 GB gp3 | ~$0.80 |
+| EBS 30 GB gp3 | ~$2.40 |
 | Elastic IP (associated) | $0 |
 | Security group / IAM | $0 |
 | S3 (existing, ~30 MB family photos) | cents |
