@@ -119,12 +119,16 @@ Resources:
         (EC2, IAM, S3 bucket reference, ALB cleanup). Trusts the
         AdminUser created in this stack. MFA enforced when the stack
         was created with RequireMFA=true.
+      # Use !GetAtt so CloudFormation waits for AdminUser before creating
+      # AdminRole. Constructing the ARN with !Sub creates no dependency,
+      # CFN parallelises the two, and IAM rejects the trust policy with
+      # "Invalid principal" because the user does not exist yet.
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:user/${AdminUserName}'
+              AWS: !GetAtt AdminUser.Arn
             Action: sts:AssumeRole
             Condition: !If
               - EnforceMFA
