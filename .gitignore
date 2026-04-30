@@ -6,6 +6,25 @@ wifi.json
 # Streamlit native auth secrets (Entra OIDC client id/secret, cookie secret)
 .streamlit/secrets.toml
 **/.streamlit/secrets.toml
+
+# Terraform — never commit state, real tfvars, or plans
+**/*.tfstate
+**/*.tfstate.*
+**/.terraform/
+**/.terraform.tfstate.lock.info
+**/*.tfvars
+**/*.tfvars.json
+**/*.tfplan
+!**/*.tfvars.example
+!**/*.tfvars.json.example
+
+# CloudFormation real parameter files (account IDs, ARNs)
+**/parameters.json
+**/parameters.*.json
+!**/parameters.example.json
+
+# Local AWS backup snapshots (handled outside repo, but never commit if generated here)
+aws_backups/
 # Exception: wifi.json template served by ImageUiApp for user download
 !s3_image_croper_ui_app/ImageUiApp/imageuiapp/data/wifi.json
 

@@ -1,0 +1,13 @@
+# Terraform state — never commit, contains resource attributes verbatim.
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.tfstate.lock.info
+
+# Real variable values — may include public IPs, key pair names.
+*.tfvars
+*.tfvars.json
+!*.example
+
+# Plan output (often binary, may contain attribute values).
+*.tfplan

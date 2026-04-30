@@ -1,0 +1,20 @@
+# Copy to terraform.tfvars and fill in real values:
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# terraform.tfvars is gitignored. Never commit it.
+
+aws_region = "eu-central-1"
+
+# Existing S3 bucket. Will be imported, not created.
+s3_bucket_name = "rasp-pi-family-s3"
+
+instance_name = "imageuiapp"
+instance_type = "t4g.micro"
+
+# Single CIDR allowed to SSH. NEVER use 0.0.0.0/0 here in production.
+ssh_admin_cidr = "REPLACE_WITH_YOUR_PUBLIC_IP/32"
+
+# Name of an existing EC2 key pair in eu-central-1.
+ec2_ssh_key_name = "REPLACE_WITH_KEY_PAIR_NAME"
+
+ebs_size_gb = 8

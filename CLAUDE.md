@@ -96,6 +96,18 @@ After every major update (multi-file changes, new features, install flow changes
 - Credentials should live in `.env` files (with `.env.example` templates committed) or `wifi.json` (already gitignored in pi-s3-sync).
 - `.pem` files in `s3_image_croper_ui_app/` should be gitignored.
 
+## Infrastructure as Code
+
+| Path | Purpose |
+|------|---------|
+| `infrastructure/terraform/imageuiapp/` | EC2 + IAM role + SG + EIP, plus the existing S3 bucket imported under management with `lifecycle.prevent_destroy = true`. |
+| `infrastructure/cloudformation/admin-role/` | One-time bootstrap stack that creates the `imageuiapp-admin` IAM role used by Terraform via STS (MFA-gated). |
+| `scripts/aws/assume_admin.sh` | Source it (`source scripts/aws/...`) to assume the admin role and export short-lived credentials into the shell. SSO and MFA paths supported. |
+| `scripts/aws/backup_s3.sh` | Snapshot the bucket to `~/aws_backups/` before any risky infra change. |
+| `scripts/claude-skills/assume-aws-admin/` | Claude Code skill that triggers `assume_admin.sh` whenever an AWS command needs more than the default S3-only IAM perms. |
+
+Daily IaC workflow: `source scripts/aws/assume_admin.sh` → `cd infrastructure/terraform/imageuiapp && terraform plan/apply`.
+
 ## Documentation
 
 Full project documentation lives in `docs/`. See [docs/index.md](docs/index.md).

@@ -49,6 +49,29 @@ The eInk setup script enables SPI/I2C hardware interfaces and prompts for reboot
 - To make persistent changes: disable OverlayFS via `sudo raspi-config nonint disable_overlayfs`, reboot, make changes, re-enable, reboot
 - The SD card at `/mnt/epaper_sd` remains writable (it's a separate mount)
 
+## Infrastructure as Code
+
+The EC2 host, its IAM role, security group, and Elastic IP are managed in
+`infrastructure/terraform/imageuiapp/`. The existing S3 bucket is imported
+into the same Terraform state with `lifecycle.prevent_destroy = true` so
+Terraform never recreates it.
+
+The admin role used by Terraform itself is provisioned out-of-band via
+`infrastructure/cloudformation/admin-role/` (CloudFormation, deployed once
+with the AWS account's existing admin credentials). Daily IaC work assumes
+that role via STS using `scripts/aws/assume_admin.sh`, which supports
+either AWS SSO browser login or a virtual MFA device.
+
+```
+                                +---------------------------+
+   you (browser SSO/MFA)  --->  | imageuiapp-admin role     |  <-- created by CloudFormation
+                                | (1 h STS session)         |
+                                +-------------+-------------+
+                                              |
+                                              v
+                              terraform apply (EC2, IAM, SG, EIP, S3)
+```
+
 ## EC2 Installation (ImageUiApp)
 
 | Script | Target OS | What It Creates |

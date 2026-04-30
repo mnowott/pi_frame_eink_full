@@ -1,0 +1,22 @@
+[
+  {
+    "ParameterKey": "TrustedPrincipalArn",
+    "ParameterValue": "arn:aws:iam::REPLACE_WITH_ACCOUNT_ID:user/REPLACE_WITH_ADMIN_USERNAME"
+  },
+  {
+    "ParameterKey": "RequireMFA",
+    "ParameterValue": "true"
+  },
+  {
+    "ParameterKey": "S3BucketArn",
+    "ParameterValue": "arn:aws:s3:::REPLACE_WITH_BUCKET_NAME"
+  },
+  {
+    "ParameterKey": "RoleName",
+    "ParameterValue": "imageuiapp-admin"
+  },
+  {
+    "ParameterKey": "MaxSessionDurationSeconds",
+    "ParameterValue": "3600"
+  }
+]

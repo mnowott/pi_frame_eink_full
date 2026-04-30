@@ -1,0 +1,222 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: |
+  Admin role used to manage the ImageUiApp Terraform stack.
+  Assumed via STS by a trusted IAM principal (typically your IAM user)
+  with MFA. The role grants only what Terraform actually needs:
+    * EC2 + EIP + Security Groups (full)
+    * IAM (scoped to roles/instance-profiles starting with imageuiapp*)
+    * S3 read-only at object level on the configured bucket;
+      bucket-level reads + tag/policy management
+    * Route 53, ACM, ELBv2 read + delete (for tearing down the old ALB)
+  Long-lived programmatic access keys are NOT needed for daily IaC work
+  once this role exists; users assume it via STS for short-lived credentials.
+
+Parameters:
+  TrustedPrincipalArn:
+    Type: String
+    Description: |
+      ARN allowed to assume this role. Examples:
+        arn:aws:iam::123456789012:user/your-admin-user
+        arn:aws:iam::123456789012:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_Admin_xxxxx
+        arn:aws:iam::123456789012:root  (allows the whole account; not recommended)
+
+  RequireMFA:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'true'
+    Description: When 'true', the AssumeRole call must present a valid MFA code.
+
+  S3BucketArn:
+    Type: String
+    Description: ARN of the existing S3 bucket Terraform manages.
+    AllowedPattern: '^arn:aws:s3:::[a-z0-9.\-]{3,63}$'
+
+  RoleName:
+    Type: String
+    Default: imageuiapp-admin
+    Description: Name of the IAM role to create.
+
+  MaxSessionDurationSeconds:
+    Type: Number
+    Default: 3600
+    MinValue: 900
+    MaxValue: 43200
+    Description: Maximum session duration (15 min - 12 h) for assumed sessions.
+
+Conditions:
+  EnforceMFA: !Equals [!Ref RequireMFA, 'true']
+
+Resources:
+  AdminRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref RoleName
+      MaxSessionDuration: !Ref MaxSessionDurationSeconds
+      Description: |
+        Assume-role for managing ImageUiApp Terraform infrastructure
+        (EC2, IAM, S3 bucket reference, ALB cleanup). MFA enforced when the
+        stack was created with RequireMFA=true.
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Ref TrustedPrincipalArn
+            Action: sts:AssumeRole
+            Condition: !If
+              - EnforceMFA
+              - Bool: { 'aws:MultiFactorAuthPresent': 'true' }
+              - !Ref AWS::NoValue
+      Tags:
+        - Key: Project
+          Value: pi-epaper-photo-frame
+        - Key: App
+          Value: imageuiapp
+        - Key: ManagedBy
+          Value: cloudformation
+      Policies:
+        - PolicyName: ec2-management
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ec2:Describe*'
+                  - 'ec2:Get*'
+                  - 'ec2:RunInstances'
+                  - 'ec2:TerminateInstances'
+                  - 'ec2:StartInstances'
+                  - 'ec2:StopInstances'
+                  - 'ec2:RebootInstances'
+                  - 'ec2:ModifyInstanceAttribute'
+                  - 'ec2:ModifyInstanceMetadataOptions'
+                  - 'ec2:CreateTags'
+                  - 'ec2:DeleteTags'
+                  - 'ec2:CreateSecurityGroup'
+                  - 'ec2:DeleteSecurityGroup'
+                  - 'ec2:AuthorizeSecurityGroupIngress'
+                  - 'ec2:AuthorizeSecurityGroupEgress'
+                  - 'ec2:RevokeSecurityGroupIngress'
+                  - 'ec2:RevokeSecurityGroupEgress'
+                  - 'ec2:UpdateSecurityGroupRuleDescriptionsIngress'
+                  - 'ec2:UpdateSecurityGroupRuleDescriptionsEgress'
+                  - 'ec2:AllocateAddress'
+                  - 'ec2:ReleaseAddress'
+                  - 'ec2:AssociateAddress'
+                  - 'ec2:DisassociateAddress'
+                  - 'ec2:CreateVolume'
+                  - 'ec2:AttachVolume'
+                  - 'ec2:DetachVolume'
+                  - 'ec2:DeleteVolume'
+                  - 'ec2:ModifyVolume'
+                Resource: '*'
+
+        - PolicyName: iam-imageuiapp-scoped
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'iam:CreateRole'
+                  - 'iam:DeleteRole'
+                  - 'iam:GetRole'
+                  - 'iam:UpdateRole'
+                  - 'iam:UpdateRoleDescription'
+                  - 'iam:PassRole'
+                  - 'iam:TagRole'
+                  - 'iam:UntagRole'
+                  - 'iam:ListRoleTags'
+                  - 'iam:AttachRolePolicy'
+                  - 'iam:DetachRolePolicy'
+                  - 'iam:PutRolePolicy'
+                  - 'iam:GetRolePolicy'
+                  - 'iam:DeleteRolePolicy'
+                  - 'iam:ListAttachedRolePolicies'
+                  - 'iam:ListRolePolicies'
+                  - 'iam:CreateInstanceProfile'
+                  - 'iam:DeleteInstanceProfile'
+                  - 'iam:GetInstanceProfile'
+                  - 'iam:AddRoleToInstanceProfile'
+                  - 'iam:RemoveRoleFromInstanceProfile'
+                  - 'iam:TagInstanceProfile'
+                  - 'iam:UntagInstanceProfile'
+                  - 'iam:ListInstanceProfiles'
+                  - 'iam:ListInstanceProfilesForRole'
+                Resource:
+                  - !Sub 'arn:aws:iam::${AWS::AccountId}:role/imageuiapp*'
+                  - !Sub 'arn:aws:iam::${AWS::AccountId}:instance-profile/imageuiapp*'
+
+        - PolicyName: s3-bucket-readonly
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:ListBucket'
+                  - 's3:GetBucketLocation'
+                  - 's3:GetBucketTagging'
+                  - 's3:PutBucketTagging'
+                  - 's3:GetBucketPolicy'
+                  - 's3:GetBucketAcl'
+                  - 's3:GetBucketVersioning'
+                  - 's3:GetBucketEncryption'
+                  - 's3:GetBucketPublicAccessBlock'
+                  - 's3:GetEncryptionConfiguration'
+                Resource: !Ref S3BucketArn
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                  - 's3:ListBucketVersions'
+                Resource: !Sub '${S3BucketArn}/*'
+
+        - PolicyName: alb-cleanup
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'elasticloadbalancing:Describe*'
+                  - 'elasticloadbalancing:DeleteLoadBalancer'
+                  - 'elasticloadbalancing:DeleteListener'
+                  - 'elasticloadbalancing:DeleteTargetGroup'
+                  - 'elasticloadbalancing:RemoveTags'
+                Resource: '*'
+
+        - PolicyName: acm-cleanup
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'acm:DescribeCertificate'
+                  - 'acm:ListCertificates'
+                  - 'acm:DeleteCertificate'
+                  - 'acm:ListTagsForCertificate'
+                Resource: '*'
+
+        - PolicyName: route53-records
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'route53:GetHostedZone'
+                  - 'route53:ListHostedZones'
+                  - 'route53:ListHostedZonesByName'
+                  - 'route53:ListResourceRecordSets'
+                  - 'route53:ChangeResourceRecordSets'
+                  - 'route53:GetChange'
+                Resource: '*'
+
+Outputs:
+  RoleArn:
+    Description: ARN to put into .env as AWS_ADMIN_ROLE_ARN.
+    Value: !GetAtt AdminRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-RoleArn'
+
+  AssumeRoleSnippet:
+    Description: Example aws sts assume-role command.
+    Value: !Sub
+      - 'aws sts assume-role --role-arn ${RoleArn} --role-session-name imageuiapp-admin'
+      - { RoleArn: !GetAtt AdminRole.Arn }

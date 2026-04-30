@@ -1,0 +1,4 @@
+# Real parameter files contain account IDs and ARNs (sensitive PII).
+parameters.json
+parameters.*.json
+!parameters.example.json

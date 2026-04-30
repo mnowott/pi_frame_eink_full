@@ -32,15 +32,21 @@ Internet :80,:443
 
 ## 2. EC2 Provisioning
 
+Recommended path: use the Terraform module under
+`infrastructure/terraform/imageuiapp/` (assume admin role first via
+`scripts/aws/assume_admin.sh`). It provisions exactly the resources below
+and imports the existing S3 bucket without recreating it.
+
 | Item | Value |
 |------|-------|
 | Instance type | `t4g.micro` (1 GB RAM, ARM, ~$6/mo) |
-| AMI | Amazon Linux 2023 ARM |
-| EBS | 8 GB gp3 |
-| Elastic IP | Allocate one, associate to instance |
-| Security Group inbound | 22/tcp from your admin IP, 80/tcp + 443/tcp from `0.0.0.0/0` |
+| AMI | Amazon Linux 2023 ARM (auto-discovered via `data.aws_ami`) |
+| EBS | 8 GB gp3, encrypted |
+| IMDS | v2 required |
+| Elastic IP | Allocated and associated |
+| Security Group inbound | 22/tcp from `ssh_admin_cidr`, 80/tcp + 443/tcp from `0.0.0.0/0` |
 | Security Group outbound | All (default) |
-| IAM role | S3 access to the image bucket; no AWS keys on disk |
+| IAM role | `imageuiapp-ec2`, S3 access to the image bucket; no AWS keys on disk |
 
 If image processing at the 4000 px slider maximum runs out of memory, upgrade
 to `t4g.small` (2 GB).
