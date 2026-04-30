@@ -25,6 +25,12 @@ wifi.json
 
 # Local AWS backup snapshots (handled outside repo, but never commit if generated here)
 aws_backups/
+
+# Audits — kept local only, not in repo history
+docs/audits/
+
+# Terraform provider lockfile — kept local only per project preference
+**/.terraform.lock.hcl
 # Exception: wifi.json template served by ImageUiApp for user download
 !s3_image_croper_ui_app/ImageUiApp/imageuiapp/data/wifi.json
 

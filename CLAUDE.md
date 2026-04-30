@@ -88,7 +88,7 @@ After every code change:
 3. **Update tickets/bugs** — if your change resolves a ticket or bug, update its status to Closed. If it introduces new issues, create new entries.
 
 After every major update (multi-file changes, new features, install flow changes, refactors):
-4. **Run a full audit** using the template at `docs/audits/_TEMPLATE.md`. Create a new audit file (`AUD_NNN_short_title.md`), work through every checklist item, document findings, fix issues found, and update `docs/audits/INDEX.md`. This catches documentation drift, stale tickets, security regressions, and portability issues before they accumulate.
+4. **Run a full audit** using the local-only template at `~/imageuiapp_audits_backup/_TEMPLATE.md` (not in repo). Save the resulting `AUD_NNN_short_title.md` next to it. The audit catches documentation drift, stale tickets, security regressions, and portability issues. Audits live outside the repo by project preference; do not re-introduce `docs/audits/` to git.
 
 ## Security Rules
 
