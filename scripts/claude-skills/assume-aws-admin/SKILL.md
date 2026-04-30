@@ -4,7 +4,8 @@ description: |
   Use this skill whenever Claude Code needs AWS access beyond the
   default S3-only permissions on this repo: any aws-cli command that
   returns AccessDenied / UnauthorizedOperation, terraform plan/apply,
-  CloudFormation deploy, EC2/IAM/ELB/Route53/ACM operations. The skill
+  CloudFormation deploy, EC2/IAM/Route53/EIP/Cost-Explorer/Pricing
+  operations. (ELB and ACM are also covered for legacy ALB cleanup.) The skill
   obtains short-lived STS credentials for the imageuiapp-admin role,
   prompting the user for a fresh 6-digit MFA code only when the cached
   session is missing or near-expiry.

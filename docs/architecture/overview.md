@@ -1,6 +1,6 @@
 # System Overview
 
-Last updated: 2026-03-07
+Last updated: 2026-04-30
 
 ## What This System Does
 
@@ -97,9 +97,15 @@ pi_project/
 │   ├── ImageUiApp/                # Image cropper + S3 upload (Streamlit)
 │   ├── SettingsApp/               # Pi settings editor (Streamlit)
 │   ├── install_as.sh              # Install on Pi
-│   ├── install_as_aws_linux.sh    # Install on EC2
+│   ├── install_as_aws_linux_caddy.sh  # Install on EC2 (Caddy + Streamlit native OIDC)
 │   ├── install_settings.sh        # Step 4: SettingsApp systemd service
-│   └── ELB_AUTH.md                # ALB + Entra ID OIDC setup guide
+│   └── EC2_DIRECT_AUTH.md         # Caddy + Entra ID OIDC runbook (no ALB)
+│
+├── infrastructure/                # IaC for the EC2 host
+│   ├── terraform/imageuiapp/      # EC2 + IAM + EIP + S3 import
+│   └── cloudformation/admin-role/ # Bootstrap admin user + role
+│
+├── scripts/                       # Helpers (AWS assume-role, S3 backup, Claude skill)
 │
 └── docs/                          # Project documentation
 ```
@@ -116,5 +122,7 @@ pi_project/
 | Display hardware | Waveshare ePaper drivers (SPI via spidev, GPIO via gpiozero) |
 | OS services | systemd (services, timers, mount units), udev rules |
 | Networking | NetworkManager / nmcli (Wi-Fi on Pi) |
-| Cloud | AWS S3, EC2, ALB, Route 53, ACM, Entra ID (OIDC) |
+| Cloud | AWS S3, EC2, Route 53, Entra ID OIDC (validated in-app via Streamlit native auth) |
+| Edge / TLS | Caddy v2 on EC2 (auto Let's Encrypt; no ALB, no ACM) |
+| IaC | Terraform (provider AWS ~>5.0); CloudFormation for the bootstrap admin role |
 | Testing | pytest 8.0, moto 5.1 (mocked S3) |

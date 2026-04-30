@@ -41,7 +41,7 @@ and imports the existing S3 bucket without recreating it.
 |------|-------|
 | Instance type | `t4g.micro` (1 GB RAM, ARM, ~$6/mo) |
 | AMI | Amazon Linux 2023 ARM (auto-discovered via `data.aws_ami`) |
-| EBS | 8 GB gp3, encrypted |
+| EBS | 30 GB gp3, encrypted (AL2023 ARM AMI snapshot floor is 30 GiB) |
 | IMDS | v2 required |
 | Elastic IP | Allocated and associated |
 | Security Group inbound | 22/tcp from `ssh_admin_cidr`, 80/tcp + 443/tcp from `0.0.0.0/0` |

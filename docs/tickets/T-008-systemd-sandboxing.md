@@ -69,7 +69,7 @@ ProtectHome=read-only
 - `eInkFrameWithStreamlitMananger/setup.sh` (generates epaper.service)
 - `pi-s3-sync/systemd/sd-s3-sync.service`
 - `s3_image_croper_ui_app/install_settings.sh` (generates settingsapp.service)
-- `s3_image_croper_ui_app/install_as_aws_linux.sh` (generates imageuiapp.service)
+- `s3_image_croper_ui_app/install_as_aws_linux_caddy.sh` (generates imageuiapp.service + caddy.service)
 
 ### Validation
 

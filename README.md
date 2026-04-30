@@ -100,7 +100,9 @@ All modules use **Poetry** for dependency management and have lint, typecheck (m
 
 ## Quick Start
 
-### 1. Set up the ImageUiApp (on your laptop or EC2)
+### 1. Set up the ImageUiApp
+
+**Local laptop (no auth, fastest):**
 
 ```bash
 cd s3_image_croper_ui_app/ImageUiApp
@@ -110,6 +112,16 @@ poetry run imageuiapp --port 8501
 ```
 
 Open `http://localhost:8501`, upload photos, crop them, and save to S3.
+
+**Public deployment behind your domain with OIDC auth (optional):**
+
+For a permanent install on a small EC2 (t4g.micro, ~$10/mo gross),
+fronted by Caddy with automatic Let's Encrypt and Microsoft Entra ID
+OIDC at the app layer, follow
+[`s3_image_croper_ui_app/EC2_DIRECT_AUTH.md`](s3_image_croper_ui_app/EC2_DIRECT_AUTH.md).
+The Terraform module that provisions the EC2 + IAM + EIP and the
+CloudFormation bootstrap for the admin role both live under
+[`infrastructure/`](infrastructure/).
 
 ### 2. Set up a Raspberry Pi
 
@@ -185,6 +197,8 @@ Full docs live in [`docs/`](docs/index.md):
 - [Architecture](docs/architecture/index.md) — system overview, data flow, deployment
 - [Services](docs/services/index.md) — systemd units, config, per-service docs
 - [Hardening Summary](docs/architecture/hardening-summary.md) — security measures applied
+- [EC2 Direct Auth Runbook](s3_image_croper_ui_app/EC2_DIRECT_AUTH.md) — Caddy + Entra OIDC deployment of the cropper
+- [Infrastructure as Code](infrastructure/) — Terraform module for EC2/IAM/EIP and CloudFormation bootstrap for the admin role
 
 ## Security
 
