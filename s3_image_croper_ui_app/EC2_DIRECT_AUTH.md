@@ -190,13 +190,24 @@ If anything is broken after the DNS flip:
 
 ## 10. Cost comparison
 
-| Item | Before (ALB) | After (Caddy on EC2) |
-|------|--------------|----------------------|
-| ALB base + LCU | ~$19-22/mo | $0 |
-| ACM cert | $0 | $0 (LE via Caddy) |
-| EC2 | ~$8.50 (t3.micro, x86) | ~$6 (t4g.micro, ARM) |
-| Route 53 hosted zone | $0.50 | $0.50 |
-| **Monthly total** | **~$28-32** | **~$7** |
+Numbers below are the **actual** pre-cutover bill from AWS Cost
+Explorer (April 2026), and the projected steady-state post-cutover.
+The original `~$28-32` estimate missed Public IPv4 charges (introduced
+Feb 2024), idle EIPs, the second EC2 that was still running, and DE
+VAT.
 
-Roughly 75-80 % saving with the same auth strength (Entra ID + assignment
-required).
+| Item | Before (ALB, actual) | After (Caddy, projected) |
+|------|----------------------|--------------------------|
+| ALB base + LCU | $18.84 | $0 |
+| EC2 compute | $16.68 (two instances) | ~$6 (t4g.micro) |
+| EBS / EC2-Other | $1.84 | ~$2.40 |
+| Public IPv4 (VPC) | $15.37 (4 EIPs total) | $0 (1 in-use EIP) |
+| ACM cert | $0 | $0 (LE via Caddy) |
+| Route 53 | $1.01 | $0.50 |
+| S3 | $0.03 | <$0.10 |
+| Tax (DE 19% VAT) | $10.26 | ~$1.70 |
+| **Monthly total** | **~$64** | **~$10.70** |
+
+Realised saving: **~83 %**, ~$640/year. See
+[`docs/audits/AUD_004_post_cutover_cleanup.md`](../docs/audits/AUD_004_post_cutover_cleanup.md)
+for the full bill audit and decommission record.
