@@ -84,7 +84,9 @@ _assume_admin_main() {
 
   if [ -n "${AWS_MFA_SERIAL:-}" ]; then
     echo "==> MFA path (default). Device: ${AWS_MFA_SERIAL}"
-    local mfa_code="${1:-${MFA_CODE:-}}"
+    # Prefer MFA_CODE env over $1: when sourced from with_admin_role.sh,
+    # $1 is whatever command the wrapper was asked to run ("aws", "terraform").
+    local mfa_code="${MFA_CODE:-${1:-}}"
     if [ -z "${mfa_code}" ]; then
       read -r -p "Enter 6-digit MFA code: " mfa_code
     else
