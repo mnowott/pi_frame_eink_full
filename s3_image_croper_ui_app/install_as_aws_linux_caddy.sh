@@ -230,6 +230,10 @@ fi
 # 6) imageuiapp.service (bound to 127.0.0.1)
 ########################################
 
+# Streamlit insists on writing ~/.streamlit/installation_id_v4 even with
+# telemetry off, so the unit needs a write hole through ProtectHome.
+sudo install -d -o "${APP_USER}" -g "${APP_USER}" -m 0755 "${HOME_DIR}/.streamlit"
+
 SERVICE_FILE="/etc/systemd/system/imageuiapp.service"
 sudo tee "${SERVICE_FILE}" >/dev/null <<EOF
 [Unit]
@@ -248,6 +252,7 @@ Environment=PYTHONUNBUFFERED=1
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
+ReadWritePaths=${HOME_DIR}/.streamlit
 PrivateTmp=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
