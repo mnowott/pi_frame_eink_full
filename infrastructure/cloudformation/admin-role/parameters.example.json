@@ -4,10 +4,6 @@
     "ParameterValue": "imageuiapp-admin"
   },
   {
-    "ParameterKey": "InitialPassword",
-    "ParameterValue": "REPLACE_WITH_STRONG_ONE_TIME_PASSWORD"
-  },
-  {
     "ParameterKey": "RequireMFA",
     "ParameterValue": "true"
   },

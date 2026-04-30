@@ -2,18 +2,19 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: |
   Bootstrap stack for ImageUiApp infrastructure management.
   Creates:
-    1. An IAM user (default name: imageuiapp-admin) with console access,
-       a forced password reset on first login, and inline permissions to
-       manage their own MFA device, change their password, and assume the
-       admin role created below.
-    2. The imageuiapp-admin IAM role with the same scoped permissions as
-       before (EC2, IAM-on-imageuiapp*, S3-readonly on the configured
-       bucket, ALB/ACM/Route53 cleanup). The role trusts the user above,
+    1. A programmatic-only IAM user (default name: imageuiapp-admin).
+       NO console password is created. The user has inline permissions
+       only to manage their own MFA device and assume the admin role.
+    2. The imageuiapp-admin IAM role with scoped permissions (EC2,
+       IAM-on-imageuiapp*, S3-readonly on the configured bucket,
+       ALB/ACM/Route53 cleanup). The role trusts the user above and is
        MFA-gated by default.
-  After the stack reaches CREATE_COMPLETE:
-    - Sign in as the new user with InitialPassword. AWS forces a reset.
-    - In Security credentials, assign a virtual MFA device.
-    - From a terminal, source scripts/aws/assume_admin.sh.
+  After the stack reaches CREATE_COMPLETE, root completes 2 manual steps
+  in the IAM console (one-time):
+    a) Assign a virtual MFA device to the new user. Save the MFA serial.
+    b) Create one access key for the new user. Save the key id + secret
+       into ~/.aws/credentials on the laptop.
+  Then root locks itself away and never touches AWS for daily IaC.
 
 Parameters:
   AdminUserName:
@@ -21,16 +22,6 @@ Parameters:
     Default: imageuiapp-admin
     AllowedPattern: '^[\w+=,.@\-]{1,64}$'
     Description: Name of the IAM user the stack will create.
-
-  InitialPassword:
-    Type: String
-    NoEcho: true
-    MinLength: 12
-    MaxLength: 128
-    Description: |
-      One-time console password for the new user. AWS will force a reset
-      on first sign-in. Must satisfy your account's IAM password policy
-      (at minimum: 12 chars, mixed case, digits, symbols).
 
   RequireMFA:
     Type: String
@@ -65,13 +56,12 @@ Resources:
   # 1. The admin IAM user
   ##############################
 
+  # No LoginProfile -> no console password -> no console sign-in for this
+  # user. Daily work is access-key + MFA + sts:AssumeRole, nothing else.
   AdminUser:
     Type: AWS::IAM::User
     Properties:
       UserName: !Ref AdminUserName
-      LoginProfile:
-        Password: !Ref InitialPassword
-        PasswordResetRequired: true
       Tags:
         - Key: Project
           Value: pi-epaper-photo-frame
@@ -80,11 +70,10 @@ Resources:
         - Key: ManagedBy
           Value: cloudformation
 
-  # Bootstrap permissions: this is what the new user can do BEFORE assuming
-  # the admin role. Just enough to (a) configure their own MFA device, (b)
-  # change their forced password, and (c) call sts:AssumeRole on the admin
-  # role. Everything else (EC2, IAM management, S3) is delegated to the
-  # admin role and only available after MFA-gated assume-role.
+  # Bootstrap permissions: only what the user needs BEFORE assuming the
+  # admin role. They can resync their own MFA device (rotate authenticator)
+  # and call sts:AssumeRole on the role. Everything else (EC2, IAM
+  # management, S3) is delegated to the role and gated by MFA.
   AdminUserBootstrapPolicy:
     Type: AWS::IAM::UserPolicy
     Properties:
@@ -100,29 +89,16 @@ Resources:
               - 'iam:GetUser'
               - 'iam:ListMFADevices'
               - 'iam:ListVirtualMFADevices'
-              - 'iam:GetAccountPasswordPolicy'
               - 'iam:GetAccountSummary'
             Resource: '*'
 
           - Sid: ManageOwnMfaDevice
             Effect: Allow
             Action:
-              - 'iam:CreateVirtualMFADevice'
-              - 'iam:DeleteVirtualMFADevice'
-              - 'iam:EnableMFADevice'
               - 'iam:ResyncMFADevice'
-              - 'iam:DeactivateMFADevice'
             Resource:
               - !Sub 'arn:aws:iam::${AWS::AccountId}:user/${AdminUserName}'
               - !Sub 'arn:aws:iam::${AWS::AccountId}:mfa/${AdminUserName}'
-
-          - Sid: ChangeOwnPassword
-            Effect: Allow
-            Action:
-              - 'iam:ChangePassword'
-              - 'iam:GetLoginProfile'
-              - 'iam:UpdateLoginProfile'
-            Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:user/${AdminUserName}'
 
           - Sid: AssumeAdminRole
             Effect: Allow
@@ -299,16 +275,12 @@ Resources:
 Outputs:
 
   AdminUserName:
-    Description: Name of the new IAM user. Sign in as this user with InitialPassword.
+    Description: Name of the new programmatic-only IAM user (no console access).
     Value: !Ref AdminUser
 
   AdminUserArn:
     Description: ARN of the new IAM user.
     Value: !GetAtt AdminUser.Arn
-
-  ConsoleSignInUrl:
-    Description: Console sign-in URL for this account.
-    Value: !Sub 'https://${AWS::AccountId}.signin.aws.amazon.com/console'
 
   ExpectedMfaSerial:
     Description: |
