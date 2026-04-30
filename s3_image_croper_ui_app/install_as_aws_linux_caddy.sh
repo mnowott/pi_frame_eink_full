@@ -173,8 +173,8 @@ EOF
 ########################################
 
 if ! sudo -u "${APP_USER}" bash -lc 'command -v poetry >/dev/null 2>&1'; then
-  echo "==> Installing Poetry..."
-  sudo -u "${APP_USER}" bash -lc 'curl -sSL https://install.python-poetry.org | python3 -'
+  echo "==> Installing Poetry (using python3.11 — installer pins recent Poetry that needs >=3.10)..."
+  sudo -u "${APP_USER}" bash -lc 'curl -sSL https://install.python-poetry.org | python3.11 -'
 else
   echo "==> Poetry already installed."
 fi
