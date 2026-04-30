@@ -1,7 +1,11 @@
 [
   {
-    "ParameterKey": "TrustedPrincipalArn",
-    "ParameterValue": "arn:aws:iam::REPLACE_WITH_ACCOUNT_ID:user/REPLACE_WITH_ADMIN_USERNAME"
+    "ParameterKey": "AdminUserName",
+    "ParameterValue": "imageuiapp-admin"
+  },
+  {
+    "ParameterKey": "InitialPassword",
+    "ParameterValue": "REPLACE_WITH_STRONG_ONE_TIME_PASSWORD"
   },
   {
     "ParameterKey": "RequireMFA",

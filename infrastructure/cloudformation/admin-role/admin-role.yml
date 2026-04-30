@@ -1,29 +1,36 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: |
-  Admin role used to manage the ImageUiApp Terraform stack.
-  Assumed via STS by a trusted IAM principal (typically your IAM user)
-  with MFA. The role grants only what Terraform actually needs:
-    * EC2 + EIP + Security Groups (full)
-    * IAM (scoped to roles/instance-profiles starting with imageuiapp*)
-    * S3 read-only at object level on the configured bucket;
-      bucket-level reads + tag/policy management
-    * Route 53, ACM, ELBv2 read + delete (for tearing down the old ALB)
-  Long-lived programmatic access keys are NOT needed for daily IaC work
-  once this role exists; users assume it via STS for short-lived credentials.
+  Bootstrap stack for ImageUiApp infrastructure management.
+  Creates:
+    1. An IAM user (default name: imageuiapp-admin) with console access,
+       a forced password reset on first login, and inline permissions to
+       manage their own MFA device, change their password, and assume the
+       admin role created below.
+    2. The imageuiapp-admin IAM role with the same scoped permissions as
+       before (EC2, IAM-on-imageuiapp*, S3-readonly on the configured
+       bucket, ALB/ACM/Route53 cleanup). The role trusts the user above,
+       MFA-gated by default.
+  After the stack reaches CREATE_COMPLETE:
+    - Sign in as the new user with InitialPassword. AWS forces a reset.
+    - In Security credentials, assign a virtual MFA device.
+    - From a terminal, source scripts/aws/assume_admin.sh.
 
 Parameters:
-  TrustedPrincipalArn:
+  AdminUserName:
     Type: String
+    Default: imageuiapp-admin
+    AllowedPattern: '^[\w+=,.@\-]{1,64}$'
+    Description: Name of the IAM user the stack will create.
+
+  InitialPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 12
+    MaxLength: 128
     Description: |
-      ARN allowed to assume this role. Must be an IAM principal ARN
-      (user / role / root). Examples:
-        arn:aws:iam::123456789012:user/your-admin-user
-        arn:aws:iam::123456789012:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_Admin_xxxxx
-        arn:aws:iam::123456789012:root  (allows the whole account; not recommended)
-      NOT valid: arn:aws:account::<id>:account (no such service prefix).
-    AllowedPattern: '^arn:aws:iam::[0-9]{12}:(root|user/[\w+=,.@\-/]{1,128}|role/[\w+=,.@\-/]{1,512})$'
-    ConstraintDescription: |
-      Must match arn:aws:iam::<12-digit-acct>:(root | user/<name> | role/<path-and-name>)
+      One-time console password for the new user. AWS will force a reset
+      on first sign-in. Must satisfy your account's IAM password policy
+      (at minimum: 12 chars, mixed case, digits, symbols).
 
   RequireMFA:
     Type: String
@@ -39,6 +46,7 @@ Parameters:
   RoleName:
     Type: String
     Default: imageuiapp-admin
+    AllowedPattern: '^[\w+=,.@\-]{1,64}$'
     Description: Name of the IAM role to create.
 
   MaxSessionDurationSeconds:
@@ -52,6 +60,79 @@ Conditions:
   EnforceMFA: !Equals [!Ref RequireMFA, 'true']
 
 Resources:
+
+  ##############################
+  # 1. The admin IAM user
+  ##############################
+
+  AdminUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Ref AdminUserName
+      LoginProfile:
+        Password: !Ref InitialPassword
+        PasswordResetRequired: true
+      Tags:
+        - Key: Project
+          Value: pi-epaper-photo-frame
+        - Key: App
+          Value: imageuiapp
+        - Key: ManagedBy
+          Value: cloudformation
+
+  # Bootstrap permissions: this is what the new user can do BEFORE assuming
+  # the admin role. Just enough to (a) configure their own MFA device, (b)
+  # change their forced password, and (c) call sts:AssumeRole on the admin
+  # role. Everything else (EC2, IAM management, S3) is delegated to the
+  # admin role and only available after MFA-gated assume-role.
+  AdminUserBootstrapPolicy:
+    Type: AWS::IAM::UserPolicy
+    Properties:
+      UserName: !Ref AdminUser
+      PolicyName: bootstrap-self-service-and-assume
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+
+          - Sid: ViewOwnUserAndAccount
+            Effect: Allow
+            Action:
+              - 'iam:GetUser'
+              - 'iam:ListMFADevices'
+              - 'iam:ListVirtualMFADevices'
+              - 'iam:GetAccountPasswordPolicy'
+              - 'iam:GetAccountSummary'
+            Resource: '*'
+
+          - Sid: ManageOwnMfaDevice
+            Effect: Allow
+            Action:
+              - 'iam:CreateVirtualMFADevice'
+              - 'iam:DeleteVirtualMFADevice'
+              - 'iam:EnableMFADevice'
+              - 'iam:ResyncMFADevice'
+              - 'iam:DeactivateMFADevice'
+            Resource:
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:user/${AdminUserName}'
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:mfa/${AdminUserName}'
+
+          - Sid: ChangeOwnPassword
+            Effect: Allow
+            Action:
+              - 'iam:ChangePassword'
+              - 'iam:GetLoginProfile'
+              - 'iam:UpdateLoginProfile'
+            Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:user/${AdminUserName}'
+
+          - Sid: AssumeAdminRole
+            Effect: Allow
+            Action: 'sts:AssumeRole'
+            Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${RoleName}'
+
+  ##############################
+  # 2. The admin IAM role
+  ##############################
+
   AdminRole:
     Type: AWS::IAM::Role
     Properties:
@@ -59,14 +140,15 @@ Resources:
       MaxSessionDuration: !Ref MaxSessionDurationSeconds
       Description: |
         Assume-role for managing ImageUiApp Terraform infrastructure
-        (EC2, IAM, S3 bucket reference, ALB cleanup). MFA enforced when the
-        stack was created with RequireMFA=true.
+        (EC2, IAM, S3 bucket reference, ALB cleanup). Trusts the
+        AdminUser created in this stack. MFA enforced when the stack
+        was created with RequireMFA=true.
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
-              AWS: !Ref TrustedPrincipalArn
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:user/${AdminUserName}'
             Action: sts:AssumeRole
             Condition: !If
               - EnforceMFA
@@ -80,6 +162,7 @@ Resources:
         - Key: ManagedBy
           Value: cloudformation
       Policies:
+
         - PolicyName: ec2-management
           PolicyDocument:
             Version: '2012-10-17'
@@ -214,8 +297,27 @@ Resources:
                 Resource: '*'
 
 Outputs:
+
+  AdminUserName:
+    Description: Name of the new IAM user. Sign in as this user with InitialPassword.
+    Value: !Ref AdminUser
+
+  AdminUserArn:
+    Description: ARN of the new IAM user.
+    Value: !GetAtt AdminUser.Arn
+
+  ConsoleSignInUrl:
+    Description: Console sign-in URL for this account.
+    Value: !Sub 'https://${AWS::AccountId}.signin.aws.amazon.com/console'
+
+  ExpectedMfaSerial:
+    Description: |
+      The MFA device ARN once you assign a virtual MFA device with the
+      same name as the user. Put this in .env as AWS_MFA_SERIAL.
+    Value: !Sub 'arn:aws:iam::${AWS::AccountId}:mfa/${AdminUserName}'
+
   RoleArn:
-    Description: ARN to put into .env as AWS_ADMIN_ROLE_ARN.
+    Description: ARN of the admin role. Put this in .env as AWS_ADMIN_ROLE_ARN.
     Value: !GetAtt AdminRole.Arn
     Export:
       Name: !Sub '${AWS::StackName}-RoleArn'

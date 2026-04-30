@@ -1,31 +1,32 @@
-# CloudFormation: ImageUiApp admin role
+# CloudFormation: ImageUiApp admin user + role
 
-Creates an IAM role (`imageuiapp-admin`) that an existing IAM principal
-(typically your IAM user) can assume via STS to manage the Terraform
-infrastructure under `infrastructure/terraform/imageuiapp/`.
+Bootstrap stack. Creates **both**:
 
-## Why a CloudFormation stack and not Terraform itself?
+1. An IAM user (default `imageuiapp-admin`) with console access, a forced
+   password reset on first login, and minimal bootstrap permissions
+   (manage own MFA, change own password, `sts:AssumeRole` on the role
+   below).
+2. An IAM role (default `imageuiapp-admin`) that the user above can
+   assume via STS. The role grants the scoped permissions Terraform
+   actually needs to manage ImageUiApp infrastructure.
 
-Bootstrap problem: Terraform needs permissions to create roles, but you
-do not want to keep long-lived programmatic access keys with
-`AdministratorAccess` on disk for daily use. So:
+The trust policy on the role names the new user as the only allowed
+principal. With `RequireMFA=true` (default), the AssumeRole call also
+needs a valid MFA code.
 
-1. **Once**, with your existing admin credentials (root or
-   AdministratorAccess IAM user), deploy this CloudFormation stack. It
-   creates the scoped `imageuiapp-admin` role.
-2. **Daily** Terraform/IaC work goes through `scripts/aws/assume_admin.sh`,
-   which uses STS (with MFA) to obtain short-lived credentials in the role.
-3. The original admin credentials are kept off the laptop for daily work.
+## Why this shape?
 
-CloudFormation is a deliberate choice over Terraform here:
-* Self-contained — no Terraform state file in play before any role exists.
-* Drift-aware — `cloudformation describe-stacks` shows whether anything
-  changed out-of-band.
-* Easy teardown — `aws cloudformation delete-stack` undoes everything.
+* Daily IaC work (`terraform apply`, `aws ec2 ...`) goes through the
+  short-lived STS session of the admin role, not through long-lived
+  programmatic access keys.
+* The admin user has almost no direct permissions; everything live is
+  routed through assume-role with MFA. Stolen user password alone
+  cannot drive AWS API actions, MFA is required.
+* The bootstrap user is created **inside** the stack. You do not need
+  any pre-existing IAM admin user — the AWS account root deploys this
+  stack once, and afterwards root is no longer needed for daily work.
 
-## Permissions granted
-
-The role can do exactly what Terraform needs:
+## Permissions on the admin role
 
 | Service | Scope |
 |---------|-------|
@@ -36,22 +37,61 @@ The role can do exactly what Terraform needs:
 | ACM | Read; delete (for old ALB cert cleanup) |
 | ELBv2 | Read; delete listener/target-group/load-balancer (ALB teardown) |
 
-The role explicitly does NOT have:
-* Object writes/deletes on the S3 bucket (the EC2 instance role does that).
-* Permissions to create new IAM users, change account password policy, or
-  manage MFA devices.
-* `iam:*` outside the `imageuiapp*` name pattern.
+The role explicitly cannot:
+* Write/delete S3 objects (the EC2 instance role does that)
+* Create new IAM users, change account password policy, manage MFA
+  devices for any user other than itself
+* Touch IAM resources outside the `imageuiapp*` name pattern
 
-## Deploy
+## Deploy (console flow recommended on first run)
+
+1. AWS Console → CloudFormation → eu-central-1 → Create stack with new
+   resources.
+2. Upload `admin-role.yml`.
+3. Stack name: `imageuiapp-admin-role`.
+4. Parameters:
+   * `AdminUserName`: `imageuiapp-admin` (default fine)
+   * `InitialPassword`: a strong one-time password (12+ chars, mixed
+     case, digits, symbol). NoEcho — not saved by CloudFormation, you
+     will not see it again. **Write it down briefly until first login.**
+   * `RequireMFA`: `true`
+   * `S3BucketArn`: `arn:aws:s3:::rasp-pi-family-s3`
+   * `RoleName`: `imageuiapp-admin` (default)
+   * `MaxSessionDurationSeconds`: `3600`
+5. Capabilities: check **CAPABILITY_NAMED_IAM**.
+6. Create stack. Wait ~30 s for `CREATE_COMPLETE`.
+7. Outputs tab gives you: AdminUserArn, ConsoleSignInUrl,
+   ExpectedMfaSerial, RoleArn.
+
+## After deploy
+
+1. Sign out of root.
+2. Sign in at the `ConsoleSignInUrl` from the stack output, as
+   `imageuiapp-admin`, with the InitialPassword. AWS forces a reset.
+3. IAM → Users → `imageuiapp-admin` → Security credentials → **Assign
+   MFA device** → virtual MFA → name it the same as the user
+   (`imageuiapp-admin`). Use Google Authenticator, Authy, etc.
+4. Put into `.env` at the repo root:
+   ```
+   AWS_ADMIN_ROLE_ARN=<RoleArn from stack output>
+   AWS_MFA_SERIAL=<ExpectedMfaSerial from stack output>
+   ```
+5. From a terminal:
+   ```bash
+   source scripts/aws/assume_admin.sh
+   # Enter MFA code from the authenticator app.
+   aws sts get-caller-identity
+   # Should print  ...:assumed-role/imageuiapp-admin/...
+   ```
+
+## Deploy via CLI (alternative)
 
 ```bash
 cd infrastructure/cloudformation/admin-role
 
-# Make a real parameter file from the template (gitignored).
 cp parameters.example.json parameters.json
-# Edit parameters.json:
-#   - TrustedPrincipalArn: your IAM user ARN (or SSO permission set role ARN)
-#   - S3BucketArn:         arn:aws:s3:::<your-bucket>
+# Edit parameters.json. parameters.json is gitignored.
+# DO NOT put the InitialPassword value into a committed file.
 
 aws cloudformation deploy \
   --stack-name imageuiapp-admin-role \
@@ -59,20 +99,15 @@ aws cloudformation deploy \
   --parameter-overrides $(jq -r '.[] | "\(.ParameterKey)=\(.ParameterValue)"' parameters.json) \
   --capabilities CAPABILITY_NAMED_IAM \
   --region eu-central-1
-
-# Get the role ARN to put into .env:
-aws cloudformation describe-stacks \
-  --stack-name imageuiapp-admin-role \
-  --query 'Stacks[0].Outputs[?OutputKey==`RoleArn`].OutputValue' \
-  --output text \
-  --region eu-central-1
 ```
 
-Put the printed ARN into `.env` as `AWS_ADMIN_ROLE_ARN`.
+## Rotate the user's password
 
-## Update
+Sign in as the user → Security credentials → Change password.
 
-Edit `admin-role.yml` and rerun the same `aws cloudformation deploy` command.
+The CloudFormation `LoginProfile` is created once on stack creation and
+not refreshed on stack updates. Don't change `InitialPassword` in CFN
+parameters after the first deploy; rotate via IAM directly.
 
 ## Tear down
 
@@ -80,15 +115,21 @@ Edit `admin-role.yml` and rerun the same `aws cloudformation deploy` command.
 aws cloudformation delete-stack --stack-name imageuiapp-admin-role --region eu-central-1
 ```
 
-This removes the role. Anyone whose AWS CLI was using `assume_admin.sh`
-will get an `AccessDenied` on the next attempt. Existing STS sessions
-remain valid until their TTL expires.
+This removes both the user and the role. Detach any virtual MFA device
+from the user **first** (otherwise stack deletion fails on
+`AWS::IAM::User` because the device is attached). IAM → Users →
+`imageuiapp-admin` → Security credentials → Remove the MFA device.
 
 ## Threat model notes
 
-* `RequireMFA=true` is the default. Without MFA the assume-role call fails.
-* Trusted principal is your account's IAM user/SSO role only. No external
-  account trust.
-* Role session is short (default 1 h, max 12 h via `MaxSessionDurationSeconds`).
-* The role has no permission to escalate privileges (cannot create new IAM
-  users, attach policies outside `imageuiapp*`, or change MFA settings).
+* `RequireMFA=true` blocks role assume without a current MFA code.
+* The user's bootstrap policy lets them only manage their own MFA
+  device, change their own password, and call `sts:AssumeRole` on this
+  one role. Without MFA they can do nothing else.
+* Trust principal is locked to this account's IAM user only — no
+  cross-account or external trust.
+* Role session is short (default 1 h, max 12 h).
+* InitialPassword is `NoEcho`, never saved by CloudFormation, and a
+  password reset is forced on first login. The plaintext you typed at
+  deploy time exists only in your clipboard / scratch note until first
+  sign-in; clear it then.
