@@ -9,6 +9,30 @@ CROP_WIDTH = 800
 CROP_HEIGHT = 480
 
 
+def _require_login() -> None:
+    """Gate every page on OIDC login when [auth] is configured in secrets.toml.
+
+    Streamlit's native auth (>=1.42) populates st.user.is_logged_in only when
+    the [auth] block is present. If unconfigured (e.g. local dev without
+    secrets.toml), getattr returns None and the gate is bypassed so the app
+    still runs locally without OIDC setup.
+    """
+    user = getattr(st, "user", None)
+    if user is None:
+        return  # Streamlit older than 1.42 or auth not configured.
+    is_logged_in = getattr(user, "is_logged_in", None)
+    if is_logged_in is None:
+        return  # Auth section not configured in secrets.toml.
+    if not is_logged_in:
+        st.title("Login required")
+        st.write("This app requires authentication.")
+        st.button("Log in with Microsoft", on_click=st.login)
+        st.stop()
+
+
+_require_login()
+
+
 def has_internet(timeout: float = 3.0) -> bool:
     """
     Check if we have (likely) internet access by trying to open a TCP

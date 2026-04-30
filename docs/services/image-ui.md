@@ -1,6 +1,6 @@
 # Image UI Service (ImageUiApp)
 
-Last updated: 2026-03-07
+Last updated: 2026-04-30
 
 ## Overview
 
@@ -27,14 +27,16 @@ Streamlit web app for cropping and uploading images to S3. Runs on a laptop, EC2
 | **View** | Browse S3 images, click to preview full size |
 | **Downloads** | Download `wifi.json` template for SD card; generate pre-signed ZIP URL of all S3 images (1h expiry) |
 
-## Systemd Unit (EC2)
+## Systemd Units (EC2)
+
+### `imageuiapp.service` (bound to localhost, behind Caddy)
 
 ```ini
 # imageuiapp.service
 [Service]
 User=ec2-user
 WorkingDirectory=<repo>/s3_image_croper_ui_app/ImageUiApp
-ExecStart=/bin/bash -lc 'poetry run imageuiapp --port 8051'
+ExecStart=/bin/bash -lc 'poetry run imageuiapp --address 127.0.0.1 --port 8051'
 Restart=always
 RestartSec=5
 
@@ -52,6 +54,34 @@ RestrictRealtime=true
 RestrictSUIDSGID=true
 PrivateDevices=true
 ```
+
+### `caddy.service` (TLS + reverse proxy)
+
+Static Caddy v2 binary at `/usr/local/bin/caddy`, runs as the `caddy` system
+user, reads `/etc/caddy/Caddyfile`. The Caddyfile reverse-proxies
+`https://${APP_DOMAIN}/` to `127.0.0.1:8051` and obtains a Let's Encrypt
+certificate automatically via HTTP-01 (port 80 must be reachable).
+
+## Authentication
+
+Microsoft Entra ID OIDC, validated **inside Streamlit** via its native
+`[auth]` block (Streamlit >= 1.42). The previous ALB-based OIDC has been
+removed. The app gates every page in `app.py`:
+
+```python
+def _require_login() -> None:
+    user = getattr(st, "user", None)
+    if user is None or getattr(user, "is_logged_in", None) is None:
+        return  # Auth not configured; safe for local dev.
+    if not user.is_logged_in:
+        st.button("Log in with Microsoft", on_click=st.login)
+        st.stop()
+```
+
+The OIDC client config lives in `/etc/imageuiapp/secrets.toml` (mode 640,
+root:ec2-user). The repo working directory contains a symlink at
+`s3_image_croper_ui_app/ImageUiApp/.streamlit/secrets.toml` -> that file.
+Only `secrets.toml.example` (placeholders) is committed to git.
 
 ## Configuration
 
@@ -87,12 +117,12 @@ poetry install
 poetry run imageuiapp --port 8501
 ```
 
-### EC2 (Amazon Linux)
+### EC2 (Amazon Linux 2023)
 
 ```bash
-# Full install
-sudo bash s3_image_croper_ui_app/install_as_aws_linux.sh
-# Creates imageuiapp.service on port 8051
+# Full install: Caddy + Streamlit native OIDC + Entra ID
+sudo bash s3_image_croper_ui_app/install_as_aws_linux_caddy.sh
+# Creates caddy.service (80/443) and imageuiapp.service (127.0.0.1:8051)
 ```
 
 ### Pi (alongside SettingsApp)
@@ -102,9 +132,12 @@ bash s3_image_croper_ui_app/install_as.sh
 # Installs both ImageUiApp and SettingsApp via Poetry
 ```
 
-### With ALB + Entra ID (OIDC auth)
+### With Caddy + Entra ID (OIDC auth, no ALB)
 
-See `s3_image_croper_ui_app/ELB_AUTH.md` for full setup: ALB listener rules, Entra ID app registration, Route 53 DNS, ACM certificate.
+See `s3_image_croper_ui_app/EC2_DIRECT_AUTH.md` for the full runbook:
+DNS A record to Elastic IP, Caddy auto Let's Encrypt, Entra ID App
+Registration, Streamlit native `[auth]` block, secrets file layout, and the
+big-bang cutover steps from the previous ALB-based setup.
 
 ## Debugging
 

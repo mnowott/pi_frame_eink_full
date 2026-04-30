@@ -1,6 +1,6 @@
 # Deployment
 
-Last updated: 2026-03-07
+Last updated: 2026-04-30
 
 ## Target Hardware
 
@@ -21,9 +21,9 @@ Last updated: 2026-03-07
 |---------|---------|
 | S3 (`your-s3-bucket-name`, `eu-central-1`) | Image storage and distribution |
 | EC2 | Optional: host ImageUiApp for remote access |
-| ALB + Entra ID OIDC | Optional: authenticated access to ImageUiApp |
-| Route 53 | Optional: DNS for `app.yourdomain.example` |
-| ACM | Optional: TLS certificate for `*.yourdomain.example` |
+| Caddy on EC2 | Optional: TLS termination (Let's Encrypt, automatic) and reverse proxy in front of Streamlit |
+| Microsoft Entra ID (OIDC) | Optional: authentication, validated inside Streamlit via its native `[auth]` block |
+| Route 53 | Optional: DNS A record `app.yourdomain.example` -> EC2 Elastic IP |
 
 ## Pi Installation Order
 
@@ -53,10 +53,11 @@ The eInk setup script enables SPI/I2C hardware interfaces and prompts for reboot
 
 | Script | Target OS | What It Creates |
 |--------|-----------|----------------|
-| `s3_image_croper_ui_app/install_as_aws_linux.sh` | Amazon Linux | Poetry env + `imageuiapp.service` on port 8051 |
+| `s3_image_croper_ui_app/install_as_aws_linux_caddy.sh` | Amazon Linux 2023 | Poetry env + `caddy.service` (auto LE) + `imageuiapp.service` on `127.0.0.1:8051`, with `/etc/imageuiapp/secrets.toml` for Streamlit native OIDC against Entra ID |
 | `s3_image_croper_ui_app/install_as.sh` | Raspberry Pi | Poetry env for both ImageUiApp + SettingsApp (no systemd) |
 
-Optional: configure ALB + Entra ID OIDC per `s3_image_croper_ui_app/ELB_AUTH.md`.
+See `s3_image_croper_ui_app/EC2_DIRECT_AUTH.md` for the full Caddy + Entra ID
+runbook (DNS, App Registration, secrets, cutover from the old ALB-based setup).
 
 ## Systemd Services (Pi)
 
@@ -74,4 +75,5 @@ Optional: configure ALB + Entra ID OIDC per `s3_image_croper_ui_app/ELB_AUTH.md`
 - **Wi-Fi:** Managed by NetworkManager/nmcli. Credentials in `wifi.json` on SD card.
 - **Internet:** Required for S3 sync. Display works offline with cached images.
 - **Port 80:** SettingsApp binds to port 80 (via `CAP_NET_BIND_SERVICE`).
-- **Port 8051:** ImageUiApp on EC2 (behind ALB if using OIDC auth).
+- **Port 8051:** ImageUiApp on EC2, bound to `127.0.0.1` (reached only via Caddy reverse proxy on 443).
+- **Port 80/443:** Caddy on EC2 (TLS termination, auto LE, reverse proxy to Streamlit).

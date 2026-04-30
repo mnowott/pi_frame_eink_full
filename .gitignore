@@ -3,6 +3,9 @@
 *.pem
 *.key
 wifi.json
+# Streamlit native auth secrets (Entra OIDC client id/secret, cookie secret)
+.streamlit/secrets.toml
+**/.streamlit/secrets.toml
 # Exception: wifi.json template served by ImageUiApp for user download
 !s3_image_croper_ui_app/ImageUiApp/imageuiapp/data/wifi.json
 

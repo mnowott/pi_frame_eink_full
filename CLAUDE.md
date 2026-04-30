@@ -46,7 +46,7 @@ All Python modules use **Poetry** for dependency management.
 - **Displays:** Waveshare 7.3" 7-color (epd7in3f primary), epd7in3e, epd5in65f
 - **Display resolution:** 800x480 (images cropped/processed to fit)
 - **SD card:** USB/SD reader auto-mounted at `/mnt/epaper_sd` (vfat, via systemd mount + udev rule)
-- **AWS services:** S3 (image storage), EC2 (optional ImageUiApp host), ALB + Entra ID (optional auth), Route 53, ACM
+- **AWS services:** S3 (image storage), EC2 (optional ImageUiApp host with Caddy + Entra ID OIDC at the app layer), Route 53. TLS via Let's Encrypt (Caddy auto). No ALB, no ACM.
 
 ## Systemd Services (on Pi)
 
