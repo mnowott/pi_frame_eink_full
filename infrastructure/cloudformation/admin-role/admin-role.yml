@@ -277,6 +277,65 @@ Resources:
                   - 'route53:GetChange'
                 Resource: '*'
 
+        - PolicyName: cost-audit-readonly
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # Cost Explorer (the "Cost Explorer" UI + API).
+              - Effect: Allow
+                Action:
+                  - 'ce:GetCostAndUsage'
+                  - 'ce:GetCostAndUsageWithResources'
+                  - 'ce:GetCostForecast'
+                  - 'ce:GetUsageForecast'
+                  - 'ce:GetReservationCoverage'
+                  - 'ce:GetReservationUtilization'
+                  - 'ce:GetReservationPurchaseRecommendation'
+                  - 'ce:GetSavingsPlansCoverage'
+                  - 'ce:GetSavingsPlansUtilization'
+                  - 'ce:GetSavingsPlansUtilizationDetails'
+                  - 'ce:GetTags'
+                  - 'ce:GetDimensionValues'
+                  - 'ce:GetCostCategories'
+                  - 'ce:GetAnomalies'
+                  - 'ce:GetAnomalyMonitors'
+                  - 'ce:GetAnomalySubscriptions'
+                  - 'ce:DescribeCostCategoryDefinition'
+                  - 'ce:ListCostAllocationTags'
+                  - 'ce:ListCostCategoryDefinitions'
+                Resource: '*'
+              # Budgets read.
+              - Effect: Allow
+                Action:
+                  - 'budgets:ViewBudget'
+                  - 'budgets:DescribeBudget'
+                  - 'budgets:DescribeBudgets'
+                  - 'budgets:DescribeBudgetActionsForBudget'
+                  - 'budgets:DescribeBudgetActionHistories'
+                  - 'budgets:DescribeNotificationsForBudget'
+                  - 'budgets:DescribeSubscribersForNotification'
+                Resource: '*'
+              # Cost and Usage Reports definitions (CUR).
+              - Effect: Allow
+                Action:
+                  - 'cur:DescribeReportDefinitions'
+                Resource: '*'
+              # Pricing API (look up on-demand prices).
+              - Effect: Allow
+                Action:
+                  - 'pricing:DescribeServices'
+                  - 'pricing:GetAttributeValues'
+                  - 'pricing:GetProducts'
+                Resource: '*'
+              # Account contact info / regions enabled / org info often
+              # needed by reporting tools.
+              - Effect: Allow
+                Action:
+                  - 'account:GetContactInformation'
+                  - 'account:ListRegions'
+                  - 'organizations:DescribeOrganization'
+                Resource: '*'
+
 Outputs:
 
   AdminUserName:

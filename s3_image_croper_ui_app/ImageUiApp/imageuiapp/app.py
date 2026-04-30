@@ -26,7 +26,12 @@ def _require_login() -> None:
     if not is_logged_in:
         st.title("Login required")
         st.write("This app requires authentication.")
-        st.button("Log in with Microsoft", on_click=st.login)
+        # Named provider matches the [auth.microsoft] block in secrets.toml.
+        # Streamlit 1.52 has a regression where st.login() without an
+        # argument raises "NoneType object does not support item assignment"
+        # at the OIDC callback when the single-provider [auth] block is
+        # used; the named-provider form is the stable code path.
+        st.button("Log in with Microsoft", on_click=st.login, args=("microsoft",))
         st.stop()
 
 
