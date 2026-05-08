@@ -111,3 +111,21 @@ def test_walks_subdirectories(tmp_path):
     converter.process_images()
 
     assert (out / "nested.jpg").exists()
+
+
+def test_corrupt_image_does_not_abort_run(tmp_path):
+    """A corrupt image must be skipped, not abort the whole run."""
+    src = tmp_path / "src"
+    out = tmp_path / "out"
+    src.mkdir()
+    out.mkdir()
+
+    # Bad file with valid extension but unreadable content.
+    (src / "broken.png").write_bytes(b"\x89PNG\r\n\x1a\nnot-actually-png")
+    _make_test_image(str(src / "good.jpg"))
+
+    converter = ImageConverter(str(src), str(out))
+    converter.process_images()  # must not raise
+
+    assert (out / "good.jpg").exists()
+    assert not (out / "broken.png").exists()

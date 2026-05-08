@@ -49,7 +49,19 @@ class ImageConverter:
 
                 img_path = os.path.join(root, img)
                 print(f"Found file: {img_path}")
-                self.resize_image(img_path, img)
+                try:
+                    self.resize_image(img_path, img)
+                except Exception as e:
+                    # Skip corrupt or unreadable images so a single bad file does
+                    # not abort processing of the rest of the SD card. Without
+                    # this, one bad PNG empties the processed-image cache and
+                    # the display falls back to "no valid images".
+                    print(
+                        f"[image_converter] Skipping {img_path}: "
+                        f"{type(e).__name__}: {e}",
+                        flush=True,
+                    )
+                    continue
 
     # Resizes the image to fit the target dimensions while maintaining aspect ratio.
     # Crops the image to the target dimensions and enhances color and contrast.
