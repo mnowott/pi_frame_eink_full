@@ -282,7 +282,7 @@ After reboot, reconnect. The root filesystem is now writable.
 
 ### Step 1: Fix the data SD card mount (most common issue)
 
-**Cause:** The systemd mount unit and udev rule reference the old data SD card by UUID. Every physical SD card has a unique UUID, so a different data SD card won't mount — even if it's the same model and size.
+**Cause:** On Pis provisioned with an older `install_sd_card_reader.sh`, the systemd mount unit and udev rule reference the original data SD card by UUID (or, in some early builds, a literal placeholder like `1234-5678`). Every physical SD card has a unique UUID, so a different card won't mount — even if it's the same model and size. The current installer keys on the filesystem label `EPAPER_SD` instead, making the setup hardware-agnostic. See [services/sd-mount.md](services/sd-mount.md) for full recovery steps.
 
 **Diagnosis:**
 ```bash
