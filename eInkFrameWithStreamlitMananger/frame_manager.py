@@ -155,12 +155,16 @@ if __name__ == "__main__":
     display_manager = DisplayManager(image_folder=PIC_PATH, refresh_time=refresh_time)
     print("[frame_manager] DisplayManager created")
 
-    # ImageConverter will process images from the effective source dir into PIC_PATH
+    # ImageConverter will process images from the effective source dir into PIC_PATH.
+    # s3_subtree marks the directory whose corrupt files should be deleted on
+    # processing failure so the next sd-s3-sync tick re-downloads them.
+    s3_subtree = os.path.join(sd_path, settings.get("s3_folder", "s3_folder"))
     image_converter = ImageConverter(
         source_dir=effective_source_dir,
         output_dir=PIC_PATH,
+        s3_subtree=s3_subtree,
     )
-    print("[frame_manager] ImageConverter created")
+    print(f"[frame_manager] ImageConverter created (s3_subtree={s3_subtree})")
 
     # ------------------------------------------------------------------
     # Boot picture: separate from SD content

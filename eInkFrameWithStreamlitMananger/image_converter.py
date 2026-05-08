@@ -7,10 +7,21 @@ class ImageConverter:
     Class to convert images for display on the e-Paper screen.
     """
 
-    def __init__(self, source_dir, output_dir):
+    def __init__(self, source_dir, output_dir, s3_subtree=None):
         # Use absolute paths so comparisons work reliably
         self.source_dir = os.path.abspath(source_dir)
         self.output_dir = os.path.abspath(output_dir)
+        # Subtree under which corrupt files should be deleted so the next
+        # sd-s3-sync run can re-download a fresh copy from S3. None = disabled.
+        self.s3_subtree = os.path.abspath(s3_subtree) if s3_subtree else None
+
+    def _is_under_s3_subtree(self, path: str) -> bool:
+        if not self.s3_subtree:
+            return False
+        path_abs = os.path.abspath(path)
+        return path_abs == self.s3_subtree or path_abs.startswith(
+            self.s3_subtree + os.sep
+        )
 
     # Finds valid image files in the source directory to process.
     def process_images(self):
@@ -61,6 +72,24 @@ class ImageConverter:
                         f"{type(e).__name__}: {e}",
                         flush=True,
                     )
+                    # If the bad file came from S3, delete the local copy so the
+                    # next sd-s3-sync tick will re-download a fresh one. Files
+                    # outside the S3 subtree (e.g. dropped manually onto the SD
+                    # root) are kept as-is — re-download cannot help them.
+                    if self._is_under_s3_subtree(img_path):
+                        try:
+                            os.remove(img_path)
+                            print(
+                                f"[image_converter] Deleted {img_path} so the "
+                                f"next sd-s3-sync run can re-download it.",
+                                flush=True,
+                            )
+                        except OSError as rm_err:
+                            print(
+                                f"[image_converter] Could not delete {img_path} "
+                                f"for re-download: {rm_err}",
+                                flush=True,
+                            )
                     continue
 
     # Resizes the image to fit the target dimensions while maintaining aspect ratio.

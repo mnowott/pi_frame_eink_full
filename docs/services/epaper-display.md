@@ -1,6 +1,6 @@
 # ePaper Display Service
 
-Last updated: 2026-03-07
+Last updated: 2026-05-08
 
 ## Overview
 
@@ -91,6 +91,7 @@ Fallback: `refresh_time.txt` on SD root (seconds, used if `change_interval_minut
 - **No images:** Shows pollock status card or `messages/no_valid_images.jpg`
 - **Image processing:** EXIF auto-rotate → aspect-ratio resize → center crop to 800x480 → enhance color/contrast 1.5x
 - **Cache:** Processed images stored in `/mnt/epaper_sd/_epaper_pic/`; cleared and rebuilt on each frame_manager restart
+- **Corrupt-image self-heal:** If `image_converter` cannot decode a file, it logs and skips it. Files inside the S3 subtree (`<sd>/<s3_folder>/`) are also deleted, so the next `sd-s3-sync` tick (≤15 min) re-downloads a fresh copy from S3. Files outside the S3 subtree (e.g. dropped manually onto the SD root) are kept as-is — re-download cannot help them.
 
 ## Installation
 
