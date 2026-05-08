@@ -12,7 +12,8 @@ The mount unit and udev rule key off the **filesystem label `EPAPER_SD`**, not t
 
 | File | Role |
 |------|------|
-| `install_sd_card_reader.sh` | Installer: detects partition, labels it `EPAPER_SD`, creates mount unit + udev rule |
+| `install_sd_card_reader.sh` | Installer: detects partition, labels it `EPAPER_SD`, creates mount unit + udev rule, installs watchdog |
+| `scripts/sd_mount_watchdog.sh` | Periodic self-repair script (runs as root via systemd timer) |
 
 ## Created Files
 
@@ -20,6 +21,9 @@ The mount unit and udev rule key off the **filesystem label `EPAPER_SD`**, not t
 |------|---------|
 | `/etc/systemd/system/mnt-epaper_sd.mount` | Systemd mount unit |
 | `/etc/udev/rules.d/99-epaper-sd-mount.rules` | Udev rule for hot-plug auto-mount |
+| `/usr/local/sbin/sd_mount_watchdog.sh` | Watchdog script (deployed copy) |
+| `/etc/systemd/system/sd-mount-watchdog.service` | Oneshot service wrapping the watchdog |
+| `/etc/systemd/system/sd-mount-watchdog.timer` | Timer: `OnBootSec=2min, OnUnitActiveSec=10min` |
 
 ## Mount Unit
 
@@ -65,6 +69,36 @@ lsblk -f                 # Check detected filesystems and labels
 sudo blkid /dev/sd?*     # Confirm the EPAPER_SD label
 ls /mnt/epaper_sd/
 mountpoint /mnt/epaper_sd
+```
+
+## Watchdog — Periodic Self-Repair
+
+`sd-mount-watchdog.timer` fires 2 minutes after boot and every 10 minutes thereafter. Each tick the service runs `sd_mount_watchdog.sh`, which:
+
+1. Exits clean if `/mnt/epaper_sd` is already mounted.
+2. Checks for a vfat data partition on `/dev/sdX`. If none is present, exits clean (no card plugged in — nothing to repair).
+3. Tries `systemctl restart mnt-epaper_sd.mount` (cheap path).
+4. If still not mounted, re-runs `install_sd_card_reader.sh` to rewrite the mount unit and udev rule, then verifies.
+
+The installer is idempotent, and `apt-get` only runs on first install when `fatlabel` is missing. The timer interval is the rate-limit: at most one repair attempt every 10 minutes.
+
+The watchdog covers two failure modes:
+
+- **Drift on overlay-off systems** — if the mount unit is corrupted or the SD card is replaced with one that has no `EPAPER_SD` label, the watchdog re-labels and rewrites the unit, and the fix persists.
+- **Stale baseline on overlay-on systems** — if the read-only lower fs still carries an old broken mount unit (e.g. pre-fix `by-uuid` placeholder), the watchdog repairs the upper layer every boot. Persistent fixes still require an overlay-off install.
+
+### Inspect
+
+```bash
+systemctl status sd-mount-watchdog.timer
+systemctl list-timers sd-mount-watchdog.timer
+journalctl -u sd-mount-watchdog.service -n 50 --no-pager
+```
+
+### Force a manual run
+
+```bash
+sudo systemctl start sd-mount-watchdog.service
 ```
 
 ## Recovery — Existing Pi with Broken Mount

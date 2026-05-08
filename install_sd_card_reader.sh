@@ -156,6 +156,53 @@ else
     echo "Check with: mount | grep $MOUNT_POINT"
 fi
 
+# ----- WATCHDOG: periodic self-repair if the mount drops -----
+
+SCRIPT_SRC_DIR="$(cd "$(dirname "$0")" && pwd)"
+WATCHDOG_SRC="$SCRIPT_SRC_DIR/scripts/sd_mount_watchdog.sh"
+WATCHDOG_DEST="/usr/local/sbin/sd_mount_watchdog.sh"
+WATCHDOG_SERVICE="/etc/systemd/system/sd-mount-watchdog.service"
+WATCHDOG_TIMER="/etc/systemd/system/sd-mount-watchdog.timer"
+
+if [ -f "$WATCHDOG_SRC" ]; then
+    echo
+    echo "STEP 8: Installing SD mount watchdog (periodic self-repair)..."
+
+    sudo install -m 0755 -o root -g root "$WATCHDOG_SRC" "$WATCHDOG_DEST"
+
+    sudo tee "$WATCHDOG_SERVICE" > /dev/null <<EOF
+[Unit]
+Description=Watchdog: ensure ePaper SD card mount stays healthy
+ConditionPathExists=$WATCHDOG_DEST
+
+[Service]
+Type=oneshot
+Environment=SD_INSTALLER=$SCRIPT_SRC_DIR/install_sd_card_reader.sh
+ExecStart=$WATCHDOG_DEST
+EOF
+
+    sudo tee "$WATCHDOG_TIMER" > /dev/null <<EOF
+[Unit]
+Description=Run sd-mount-watchdog every 10 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=10min
+Unit=sd-mount-watchdog.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now sd-mount-watchdog.timer
+    echo "Watchdog timer enabled. Next run: $(systemctl show sd-mount-watchdog.timer -p NextElapseUSecRealtime --value 2>/dev/null || echo 'after boot')"
+else
+    echo
+    echo "NOTE: $WATCHDOG_SRC not found — skipping watchdog install."
+fi
+
 echo
 echo "Done."
 
