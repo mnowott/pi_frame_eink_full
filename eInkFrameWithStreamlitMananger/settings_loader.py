@@ -19,9 +19,16 @@ SETTINGS_LOCATIONS = [
     os.path.join(SCRIPT_DIR, "settings.json"),
 ]
 
+# Cache key of the last load that emitted a log line. sd_monitor.py calls
+# load_settings() every 2 seconds, so unconditional logging produced ~30
+# identical lines per buffer flush in the journal. We only log when the
+# resolved path or its mtime changes (i.e. settings were edited).
+_last_logged_key: tuple | None = None
+
 
 def load_settings(caller: str = "settings_loader") -> dict:
     """Load settings.json from the first found location, merging into defaults."""
+    global _last_logged_key
     settings = DEFAULT_SETTINGS.copy()
     for path in SETTINGS_LOCATIONS:
         if os.path.exists(path):
@@ -32,10 +39,17 @@ def load_settings(caller: str = "settings_loader") -> dict:
                     for key in DEFAULT_SETTINGS:
                         if key in data:
                             settings[key] = data[key]
-                print(f"[{caller}] Loaded settings from {path}")
+                try:
+                    mtime = os.path.getmtime(path)
+                except OSError:
+                    mtime = 0.0
+                log_key = (caller, path, mtime)
+                if log_key != _last_logged_key:
+                    print(f"[{caller}] Loaded settings from {path}", flush=True)
+                    _last_logged_key = log_key
                 break
             except Exception as e:
-                print(f"[{caller}] Error reading settings from {path}: {e}")
+                print(f"[{caller}] Error reading settings from {path}: {e}", flush=True)
     return settings
 
 

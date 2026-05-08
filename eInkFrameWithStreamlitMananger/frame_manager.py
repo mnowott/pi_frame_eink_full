@@ -16,8 +16,11 @@ PROCESSED_DIR_NAME = "_epaper_pic"
 # This will be set in main() once we know the SD root path.
 PIC_PATH = None
 
-# Optional temp directory used when picture_mode == "local"
-FILTERED_SD_PATH = os.path.join(SCRIPT_DIR, "sd_filtered")
+# Temp directory used when picture_mode == "local". Lives in /tmp because
+# epaper.service runs with ProtectHome=read-only, so writes under SCRIPT_DIR
+# (in /home/pi/...) are blocked. PrivateTmp=true gives this service its own
+# isolated /tmp, so the cache is service-private and ephemeral.
+FILTERED_SD_PATH = "/tmp/epaper_sd_filtered"
 
 
 def load_settings():
